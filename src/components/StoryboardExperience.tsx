@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
+import { motion, AnimatePresence, useSpring } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import gsap from 'gsap';
@@ -57,18 +57,22 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [ambientOn, setAmbientOn] = useState(false);
   const [comfortReading, setComfortReading] = useState(false);
+  const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
 
   const [docPlaying, setDocPlaying] = useState(true);
   const [docProgress, setDocProgress] = useState(0);
 
   const editorialListRef = useRef<HTMLDivElement>(null);
 
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
+  const scaleX = useSpring(0, {
     stiffness: 120,
     damping: 28,
     restDelta: 0.001,
   });
+
+  useEffect(() => {
+    scaleX.set(activeSceneIndex / (STORYBOARD_SCENES.length - 1));
+  }, [activeSceneIndex, scaleX]);
 
   useEffect(() => {
     try {
@@ -363,6 +367,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
   const jumpToScene = (index: number) => {
     setActiveSceneIndex(index);
+    setMobileControlsOpen(false);
     if (ambientOn) soundscape.playHarmonicNote(index);
 
     if (viewMode === 'carousel' && emblaApi) {
@@ -403,15 +408,57 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
   return (
     <section id="relato-interactivo" className="relative pb-20">
-      <motion.div
-        style={{ scaleX }}
-        className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-forest via-olive to-terracotta origin-left z-50 no-print"
-      />
+      <div
+        role="progressbar"
+        aria-label="Progreso del recorrido"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round((activeSceneIndex / (STORYBOARD_SCENES.length - 1)) * 100)}
+        className="fixed inset-x-0 top-0 z-[60] h-1 bg-earth/15 no-print"
+      >
+        <motion.div
+          style={{ scaleX }}
+          className="h-full origin-left bg-gradient-to-r from-forest via-olive to-terracotta"
+        />
+      </div>
 
       {/* DOCK FLOTANTE DE NAVEGACIÓN Y ACCESIBILIDAD */}
-      <div className="sticky top-3 z-40 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 no-print">
-        <div className="rounded-[26px] bg-cream-soft/92 backdrop-blur-xl border border-earth/20 shadow-[0_14px_40px_rgba(55,35,18,0.1)] p-2.5 sm:px-4 sm:py-3 space-y-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
+      <div className="relative sm:sticky sm:top-2 z-40 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 mb-6 sm:mb-10 no-print">
+        <div className="rounded-2xl sm:rounded-[26px] bg-cream-soft/95 backdrop-blur-xl border border-earth/20 shadow-[0_12px_34px_rgba(55,35,18,0.12)] p-2 sm:px-4 sm:py-3 space-y-2.5">
+          <div className="flex sm:hidden items-center justify-between gap-3 px-1 py-0.5">
+            <div className="min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-earth">
+                Paso {String(activeSceneIndex + 1).padStart(2, '0')} de{' '}
+                {String(STORYBOARD_SCENES.length).padStart(2, '0')}
+              </p>
+              <p className="truncate text-sm font-semibold text-ink">
+                {currentScene.title}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMobileControlsOpen((open) => !open)}
+              aria-expanded={mobileControlsOpen}
+              aria-controls="mobile-story-controls"
+              className="shrink-0 rounded-full bg-forest px-4 py-2.5 text-xs font-semibold text-cream transition-colors hover:bg-forest-dark"
+            >
+              {mobileControlsOpen ? 'Cerrar' : 'Explorar pasos'}
+            </button>
+          </div>
+
+          <div className="h-1 overflow-hidden rounded-full bg-earth/10 sm:hidden" aria-hidden="true">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-forest via-olive to-terracotta transition-[width] duration-300"
+              style={{
+                width: `${((activeSceneIndex + 1) / STORYBOARD_SCENES.length) * 100}%`,
+              }}
+            />
+          </div>
+
+          <div
+            id="mobile-story-controls"
+            className={`${mobileControlsOpen ? 'flex' : 'hidden'} sm:flex flex-wrap items-center justify-between gap-2.5`}
+          >
             <div
               className="inline-flex flex-wrap items-center rounded-full bg-cream-deep/70 p-1 border border-earth/15"
               role="tablist"
@@ -506,7 +553,9 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+          <div
+            className={`${mobileControlsOpen ? 'flex' : 'hidden'} sm:flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5`}
+          >
             {STORYBOARD_SCENES.map((scene, idx) => {
               const isCurrent = activeSceneIndex === idx;
               return (
@@ -821,7 +870,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               <div className="gsap-spine-progress w-full h-full bg-gradient-to-b from-forest via-olive to-terracotta origin-top" />
             </div>
 
-            <div className="space-y-12 lg:space-y-20 relative z-10">
+            <div className="space-y-8 md:space-y-12 lg:space-y-20 relative z-10">
               {STORYBOARD_SCENES.map((scene, index) => {
                 const isReversed = index % 2 === 1 && viewMode === 'editorial';
                 const isTechExpanded =
@@ -851,7 +900,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: '-75px' }}
                       transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
-                      className="scroll-mt-36 rounded-[30px] bg-cream-soft/95 backdrop-blur-xs border border-earth/20 shadow-[0_16px_45px_rgba(70,45,25,0.07)] overflow-hidden p-4 sm:p-6 lg:p-8"
+                      className="scroll-mt-6 sm:scroll-mt-36 rounded-[24px] sm:rounded-[30px] bg-cream-soft/95 backdrop-blur-xs border border-earth/20 shadow-[0_16px_45px_rgba(70,45,25,0.07)] overflow-hidden p-4 sm:p-6 lg:p-8"
                     >
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
                         {/* Columna de fotografía real en campo */}

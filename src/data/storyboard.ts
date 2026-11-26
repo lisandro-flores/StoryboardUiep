@@ -1,15 +1,3 @@
-export interface RealPhotoItem {
-  id: string;
-  webp: string;
-  jpg: string;
-  alt: string;
-  caption: string;
-  location: string;
-  category: 'campo' | 'talleres' | 'gabinete';
-  orientation: 'landscape' | 'portrait';
-  objectPosition: string;
-}
-
 export interface StoryboardScene {
   number: number;
   numeral: string;
@@ -263,119 +251,6 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   },
 ];
 
-export const REAL_PHOTO_ARCHIVE: RealPhotoItem[] = [
-  {
-    id: 'archivo-01',
-    webp: 'assets/foto-01.webp',
-    jpg: 'assets/foto-01.jpg',
-    alt: 'Brigada estudiantil de Ingeniería Civil Sustentable en calles de San José Buenavista',
-    caption: 'Llegada y presencia de la brigada UIEP en calles de San José Buenavista.',
-    location: 'Zona habitacional',
-    category: 'campo',
-    orientation: 'landscape',
-    objectPosition: '50% 42%',
-  },
-  {
-    id: 'archivo-02',
-    webp: 'assets/foto-02.webp',
-    jpg: 'assets/foto-02.jpg',
-    alt: 'Recorrido comunitario por caminos y cruce de barranca en San José Buenavista',
-    caption: 'Inspección a pie de caminos rurales y paso sobre barranca.',
-    location: 'Cruce y caminos',
-    category: 'campo',
-    orientation: 'landscape',
-    objectPosition: '50% 62%',
-  },
-  {
-    id: 'archivo-03',
-    webp: 'assets/foto-03.webp',
-    jpg: 'assets/foto-03.jpg',
-    alt: 'Coordinación del diagnóstico en la Oficina del Juzgado de Paz',
-    caption: 'Planeación y acuerdos con autoridades locales en el Juzgado de Paz.',
-    location: 'Oficina Juzgado de Paz',
-    category: 'talleres',
-    orientation: 'landscape',
-    objectPosition: '50% 35%',
-  },
-  {
-    id: 'archivo-04',
-    webp: 'assets/foto-04.webp',
-    jpg: 'assets/foto-04.jpg',
-    alt: 'Aplicación de encuestas comunitarias en calles de San José Buenavista',
-    caption: 'Levantamiento de encuestas y diálogo directo sobre problemáticas cotidianas.',
-    location: 'Calles de la comunidad',
-    category: 'campo',
-    orientation: 'portrait',
-    objectPosition: '50% 24%',
-  },
-  {
-    id: 'archivo-05',
-    webp: 'assets/foto-05.webp',
-    jpg: 'assets/foto-05.jpg',
-    alt: 'Mesa participativa de mapa social con vecinos, jóvenes y brigadistas',
-    caption: 'Construcción colectiva del mapa social junto con vecinos y jóvenes.',
-    location: 'Techado comunitario',
-    category: 'talleres',
-    orientation: 'landscape',
-    objectPosition: '50% 42%',
-  },
-  {
-    id: 'archivo-06',
-    webp: 'assets/foto-06.webp',
-    jpg: 'assets/foto-06.jpg',
-    alt: 'Organización y análisis en mesa de la información del diagnóstico comunitario',
-    caption: 'Sistematización de encuestas y priorización técnica de necesidades.',
-    location: 'Mesa de análisis',
-    category: 'gabinete',
-    orientation: 'landscape',
-    objectPosition: '50% 45%',
-  },
-  {
-    id: 'archivo-07',
-    webp: 'assets/foto-07.webp',
-    jpg: 'assets/foto-07.jpg',
-    alt: 'Elaboración colaborativa de planos y propuestas técnicas para la comunidad',
-    caption: 'Trazo de propuestas preliminares: puente peatonal, rampas y vialidades.',
-    location: 'Taller de diseño',
-    category: 'gabinete',
-    orientation: 'portrait',
-    objectPosition: '50% 38%',
-  },
-  {
-    id: 'archivo-08',
-    webp: 'assets/foto-08.webp',
-    jpg: 'assets/foto-08.jpg',
-    alt: 'Estudiantes de la UIEP con autoridades frente al mural comunitario',
-    caption: 'Vínculo entre autoridades locales, comunidad escolar y brigada UIEP.',
-    location: 'Mural comunitario',
-    category: 'talleres',
-    orientation: 'landscape',
-    objectPosition: '50% 38%',
-  },
-  {
-    id: 'archivo-09',
-    webp: 'assets/foto-09.webp',
-    jpg: 'assets/foto-09.jpg',
-    alt: 'Recorrido de diagnóstico por brechas y caminos rurales con vegetación semiárida',
-    caption: 'Caminata de reconocimiento técnico en brechas y calles de tierra.',
-    location: 'Caminos rurales',
-    category: 'campo',
-    orientation: 'portrait',
-    objectPosition: '50% 55%',
-  },
-  {
-    id: 'archivo-10',
-    webp: 'assets/foto-10.webp',
-    jpg: 'assets/foto-10.jpg',
-    alt: 'Docente y estudiantes de la UIEP durante la jornada comunitaria',
-    caption: 'Equipo universitario durante jornada de atención y diálogo vecinal.',
-    location: 'Espacio público local',
-    category: 'campo',
-    orientation: 'portrait',
-    objectPosition: '50% 38%',
-  },
-];
-
 export const PARTICIPATION_STEPS = [
   {
     step: '01',
@@ -397,19 +272,10 @@ export const PARTICIPATION_STEPS = [
   },
 ];
 
-export const COMMUNITY_IMPACTS = [
-  'Mayor participación ciudadana de todas las edades.',
-  'Propuestas técnicas viables para el desarrollo local.',
-  'Mejora en la infraestructura comunitaria y servicios básicos.',
-  'Fortalecimiento del vínculo entre la universidad y San José Buenavista.',
-];
-
 export interface TerritoryNode {
   id: string;
   code: string;
   zone: string;
-  x: number;
-  y: number;
   photoJpg: string;
   photoWebp: string;
   photoPosition: string;
@@ -424,8 +290,6 @@ export const TERRITORY_NODES: TerritoryNode[] = [
     id: 'barranca',
     code: 'PUNTO 01',
     zone: 'Paso sobre Barranca',
-    x: 24,
-    y: 64,
     photoJpg: 'assets/foto-02.jpg',
     photoWebp: 'assets/foto-02.webp',
     photoPosition: '50% 62%',
@@ -440,8 +304,6 @@ export const TERRITORY_NODES: TerritoryNode[] = [
     id: 'escuela',
     code: 'PUNTO 02',
     zone: 'Accesos en la Escuela',
-    x: 46,
-    y: 36,
     photoJpg: 'assets/foto-08.jpg',
     photoWebp: 'assets/foto-08.webp',
     photoPosition: '50% 42%',
@@ -456,8 +318,6 @@ export const TERRITORY_NODES: TerritoryNode[] = [
     id: 'calles',
     code: 'PUNTO 03',
     zone: 'Calles y Caminos Locales',
-    x: 64,
-    y: 68,
     photoJpg: 'assets/foto-09.jpg',
     photoWebp: 'assets/foto-09.webp',
     photoPosition: '50% 58%',
@@ -472,8 +332,6 @@ export const TERRITORY_NODES: TerritoryNode[] = [
     id: 'techado',
     code: 'PUNTO 04',
     zone: 'Mesas de Mapa Social',
-    x: 52,
-    y: 52,
     photoJpg: 'assets/foto-05.jpg',
     photoWebp: 'assets/foto-05.webp',
     photoPosition: '50% 42%',
@@ -488,8 +346,6 @@ export const TERRITORY_NODES: TerritoryNode[] = [
     id: 'planeacion',
     code: 'PUNTO 05',
     zone: 'Juzgado de Paz y Servicios',
-    x: 78,
-    y: 40,
     photoJpg: 'assets/foto-03.jpg',
     photoWebp: 'assets/foto-03.webp',
     photoPosition: '50% 35%',
