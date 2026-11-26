@@ -20,8 +20,6 @@ export interface StoryboardScene {
   whatLines: [string, string];
   /** Cómo se está haciendo en la práctica junto con la comunidad */
   howDescription: string;
-  speaker: string;
-  dialogue: string;
   visualDescription: string;
   transitionNote: string;
 }
@@ -45,9 +43,6 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
     ],
     howDescription:
       'La brigada de 10 estudiantes de Ingeniería Civil Sustentable de la UIEP, asesorada por el Dr. Rogelio Rojas Ramos, visita personalmente las calles de la localidad con respeto, apertura e identidad intercultural.',
-    speaker: 'Brigada UIEP en comunidad',
-    dialogue:
-      '«Venimos de la Universidad Intercultural del Estado de Puebla a caminar junto con ustedes, conocer su realidad cotidiana y sumar nuestro trabajo técnico al servicio del pueblo.»',
     visualDescription:
       'Fotografía documental abierta en una calle de terracería de San José Buenavista bajo cielo despejado, con viviendas de block, nopales y los cerros de la región al fondo. Integrantes de la brigada universitaria portan chalecos reflejantes, gafetes con cordón azul, sombreros para el sol y mochilas de campo.',
     transitionNote:
@@ -56,9 +51,9 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     number: 2,
     numeral: '02',
-    phase: 'Contexto · Diagnóstico participativo',
+    phase: 'Contexto · Reconocimiento territorial',
     accent: 'rose',
-    title: '¿Qué se está haciendo? Un diagnóstico guiado por la comunidad',
+    title: 'Reconocimiento del territorio con la comunidad',
     locationTag: 'Caminos y cruce de barranca',
     imageWebp: 'assets/foto-02.webp',
     imageJpg: 'assets/foto-02.jpg',
@@ -71,9 +66,6 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
     ],
     howDescription:
       'Observamos en sitio el estado real de los caminos, pasos sobre barranca y servicios, combinando la mirada técnica de ingeniería civil sustentable con la experiencia diaria de quienes habitan San José Buenavista.',
-    speaker: 'Enfoque participativo',
-    dialogue:
-      '«Aquí no traemos decisiones tomadas de antemano: recorremos cada tramo para entender qué pasa en temporada de lluvias y qué obras hacen falta de verdad.»',
     visualDescription:
       'Fotografía real en plano general de la brigada cruzando a pie un paso vehicular estrecho sobre la barranca rodeado de vegetación semiárida y cerros, evidenciando la falta de resguardo peatonal seguro.',
     transitionNote:
@@ -97,9 +89,6 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
     ],
     howDescription:
       'Nos reunimos formalmente en el Juzgado de Paz con autoridades y representantes comunitarios para presentar el plan de trabajo, pedir anuencia, definir fechas de talleres y asegurar una convocatoria abierta y respetuosa.',
-    speaker: 'Trabajo con autoridades',
-    dialogue:
-      '«Todo paso se coordina primero con las autoridades de San José Buenavista para trabajar en orden, con transparencia y tomando en cuenta a toda la población.»',
     visualDescription:
       'Fotografía real en el interior de la Oficina del Juzgado de Paz: autoridades comunitarias, docente asesor e integrantes de la brigada posan juntos sosteniendo la documentación de acuerdos de vinculación.',
     transitionNote:
@@ -125,14 +114,11 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
       objectPosition: '50% 55%',
     },
     whatLines: [
-      'Etapa 2 · Trabajo de campo: Recorremos calles y aplicamos encuestas',
-      'para registrar problemáticas de caminos, agua, accesos y servicios.',
+      'Documentamos condiciones de caminos, agua y accesos',
+      'para identificar necesidades de la localidad.',
     ],
     howDescription:
       'Caminamos calle por calle con formatos impresos de encuesta y libretas de campo, platicando directamente con vecinas, vecinos y adultos mayores para escuchar qué dificultades enfrentan todos los días.',
-    speaker: 'Brigada en recorrido de calle',
-    dialogue:
-      '«En cada calle escuchamos opiniones reales sobre el estado de la terracería, el suministro de agua y los puntos donde cuesta más caminar con seguridad.»',
     visualDescription:
       'Dos fotografías reales de campo: brigadistas con chalecos reflejantes y gafetes sosteniendo las cédulas impresas de encuesta en una calle de tierra, acompañados del recorrido a pie entre cactáceas columnares y vegetación local.',
     transitionNote:
@@ -151,14 +137,11 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
       'Vecinos, jóvenes estudiantes locales y brigadistas de la UIEP reunidos en mesa de madera bajo el techado dibujando el mapa social.',
     objectPosition: '50% 42%',
     whatLines: [
-      'Etapa 2 · Mapa social: Vecinos, jóvenes y brigada dibujamos juntos',
-      'el croquis de la comunidad para ubicar las necesidades más urgentes.',
+      'Habitantes y brigada dibujan un croquis colectivo',
+      'para ubicar los puntos que requieren atención.',
     ],
     howDescription:
       'Mediante dinámicas grupales y conversatorios bajo el techado comunitario, habitantes de distintas edades trazan sobre papel bond su propio territorio, señalando qué zonas requieren atención prioritaria.',
-    speaker: 'Taller participativo vecinal',
-    dialogue:
-      '«Alrededor de la misma mesa participan jóvenes, adultos y familias señalando en el mapa dónde están los puntos críticos de la comunidad.»',
     visualDescription:
       'Fotografía real del taller comunitario bajo techado de lámina: jóvenes con uniforme escolar verde con blanco, habitantes adultos y estudiantes brigadistas dialogan alrededor de un pliego de papel bond con plumones de colores.',
     transitionNote:
@@ -182,9 +165,6 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
     ],
     howDescription:
       'En mesas de trabajo académico revisamos cada encuesta, comentario vecinal y mapa social para clasificar las problemáticas más sentidas y evaluar qué alternativas técnicas resultan viables y sustentables.',
-    speaker: 'Equipo de análisis UIEP',
-    dialogue:
-      '«Cada opinión que nos compartieron en la comunidad se registra y se analiza con cuidado para que las propuestas respondan fielmente a lo que pidió la gente.»',
     visualDescription:
       'Fotografía real de trabajo colaborativo en aula: los integrantes de la brigada revisan cuadernos, notas de campo y pliegos de síntesis concentrados alrededor de las mesas de trabajo.',
     transitionNote:
@@ -195,7 +175,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
     numeral: '07',
     phase: 'Etapa 4 de 4 · Propuestas',
     accent: 'peach',
-    title: 'Elaboración de propuestas técnicas y cómo puedes sumarte',
+    title: 'Alternativas técnicas preliminares',
     locationTag: 'Diseño de soluciones y jornada vecinal',
     imageWebp: 'assets/foto-07.webp',
     imageJpg: 'assets/foto-07.jpg',
@@ -210,14 +190,11 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
       objectPosition: '50% 38%',
     },
     whatLines: [
-      'Etapa 4 · Propuestas: Planteamos puente peatonal, rampas en la escuela',
-      'y mejora sustentable de calles; tu voz valida cada propuesta.',
+      'Planteamos opciones para cruces, accesos escolares',
+      'y calles, a partir de lo registrado en el diagnóstico.',
     ],
     howDescription:
-      'Con base en el diagnóstico elaboramos propuestas preliminares de infraestructura digna y accesible. Tú puedes sumarte en 3 pasos: (1) asistir a los talleres, (2) compartir tus ideas y (3) validar y dar seguimiento a los acuerdos.',
-    speaker: 'Propuestas para validar juntos',
-    dialogue:
-      '«Estamos trabajando en opciones concretas como un paso peatonal seguro, rampas incluyentes en la escuela y mejora de vialidades con materiales acordes al entorno.»',
+      'Las alternativas son preliminares y requieren revisión y validación junto con la comunidad.',
     visualDescription:
       'Fotografía real del equipo de ingeniería trazando a mano láminas y esquemas de solución sobre pliegos blancos, complementada con la fotografía de la brigada reunida al aire libre durante la jornada en comunidad.',
     transitionNote:
@@ -228,7 +205,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
     numeral: '08',
     phase: 'Cierre · Impacto esperado',
     accent: 'olive',
-    title: '¡Porque juntos construimos un mejor San José Buenavista!',
+    title: 'Próximos pasos con la comunidad',
     locationTag: 'Frente al mural comunitario escolar',
     imageWebp: 'assets/foto-08.webp',
     imageJpg: 'assets/foto-08.jpg',
@@ -236,14 +213,11 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
       'Fotografía grupal de estudiantes brigadistas de la UIEP, asesor y autoridades frente al mural comunitario de cactáceas en San José Buenavista.',
     objectPosition: '50% 38%',
     whatLines: [
-      '¡Porque juntos construimos un mejor San José Buenavista!',
-      'Agradecemos a la comunidad por abrirnos sus puertas y trabajar en equipo.',
+      'El diagnóstico reúne hallazgos y propuestas preliminares.',
+      'Su revisión abre paso al seguimiento comunitario.',
     ],
     howDescription:
-      'Fortalecemos un vínculo duradero entre la Universidad Intercultural del Estado de Puebla y San José Buenavista, sumando saberes comunitarios y formación técnica para mejorar la calidad de vida local.',
-    speaker: 'Agradecimiento UIEP',
-    dialogue:
-      '«Gracias a cada vecina, vecino, comité y autoridad de San José Buenavista por su confianza y por dejarnos aprender y trabajar hombro con hombro con ustedes.»',
+      'El trabajo deja una base para continuar el diálogo entre la comunidad y la UIEP.',
     visualDescription:
       'Fotografía grupal real sobre los escalones amarillos frente al mural comunitario con nopales en flor: brigadistas de la UIEP con sus chalecos y gafetes junto con autoridades escolares y comunitarias sosteniendo el acuerdo de trabajo conjunto.',
     transitionNote:

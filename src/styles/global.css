@@ -93,11 +93,144 @@
   animation: blurFadeIn 400ms ease-out both;
 }
 
+.scroll-zoom-hero {
+  min-height: 170svh;
+}
+
+.scroll-zoom-background,
+.scroll-zoom-copy {
+  will-change: transform, opacity, filter;
+}
+
+.field-scroll-sticky {
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100svh;
+  flex-direction: column;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(229, 236, 214, 0.45), transparent 58%),
+    var(--color-cream);
+}
+
+.field-scroll-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: clamp(6rem, 11svh, 8rem) max(1.25rem, calc((100% - min(82vw, 36rem)) / 2)) 1rem;
+}
+
+.field-scroll-viewport {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  align-items: center;
+  overflow: visible;
+}
+
+.field-scroll-track {
+  display: flex;
+  width: max-content;
+  align-items: stretch;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  padding-inline: max(0px, calc((100% - min(82vw, 36rem)) / 2));
+  will-change: transform;
+}
+
+.field-scroll-item {
+  flex: 0 0 min(82vw, 36rem);
+  scroll-snap-align: center;
+}
+
+.field-scroll-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 max(1.25rem, calc((100% - min(82vw, 36rem)) / 2)) 1.5rem;
+}
+
+.field-scroll-swipe-hint {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ken-burns-active,
   .blur-fade-in {
     animation: none;
     will-change: auto;
+  }
+
+  .scroll-zoom-hero {
+    min-height: 0 !important;
+  }
+
+  .scroll-zoom-stage {
+    position: relative !important;
+    min-height: 100svh;
+  }
+
+  .scroll-zoom-background,
+  .scroll-zoom-copy {
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    will-change: auto;
+  }
+}
+
+@media (max-height: 620px) and (prefers-reduced-motion: no-preference) {
+  .scroll-zoom-hero {
+    min-height: 0;
+  }
+
+  .scroll-zoom-stage {
+    position: relative;
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (max-height: 620px) {
+  .field-scroll-container {
+    height: auto !important;
+    min-height: 0;
+  }
+
+  .field-scroll-sticky {
+    position: relative;
+    height: auto;
+    overflow: visible;
+  }
+
+  .field-scroll-heading {
+    padding: 1.5rem 1.25rem 0.5rem;
+  }
+
+  .field-scroll-viewport {
+    flex: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+  }
+
+  .field-scroll-track {
+    padding-inline: 1.25rem;
+    transform: none !important;
+    will-change: auto;
+  }
+
+  .field-scroll-footer {
+    padding: 0 1.25rem 1rem;
+  }
+
+  .field-scroll-scroll-hint {
+    display: none;
+  }
+
+  .field-scroll-swipe-hint {
+    display: inline-flex;
   }
 }
 

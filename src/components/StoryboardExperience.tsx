@@ -1,5 +1,13 @@
 import { useState, useEffect, useCallback, useRef, type KeyboardEvent } from 'react';
-import { motion, AnimatePresence, MotionConfig, useSpring } from 'motion/react';
+import {
+  motion,
+  AnimatePresence,
+  MotionConfig,
+  useMotionTemplate,
+  useScroll,
+  useSpring,
+  useTransform,
+} from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import gsap from 'gsap';
@@ -67,8 +75,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
   const [docPlaying, setDocPlaying] = useState(true);
   const [docProgress, setDocProgress] = useState(0);
+  const [horizontalDistance, setHorizontalDistance] = useState(0);
 
   const editorialListRef = useRef<HTMLDivElement>(null);
+  const fieldViewportRef = useRef<HTMLDivElement>(null);
+  const fieldTrackRef = useRef<HTMLDivElement>(null);
   const lightboxDialogRef = useRef<HTMLDivElement>(null);
   const lightboxCloseButtonRef = useRef<HTMLButtonElement>(null);
   const lightboxTriggerRef = useRef<HTMLElement | null>(null);
@@ -80,6 +91,39 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     setLightboxMedia(media);
   }, []);
 
+  const { scrollYProgress: editorialScrollProgress } = useScroll({
+    target: editorialListRef,
+    offset: ['start start', 'end end'],
+  });
+  const horizontalOffset = useTransform(
+    editorialScrollProgress,
+    [0, 1],
+    [0, -horizontalDistance]
+  );
+  const horizontalTransform = useMotionTemplate`translateX(${horizontalOffset}px)`;
+
+  const scrollToEditorialScene = useCallback(
+    (index: number) => {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const behavior = prefersReduced ? 'auto' : 'smooth';
+
+      if (prefersReduced || window.innerHeight <= 620) {
+        const target = fieldTrackRef.current?.children.item(index);
+        target?.scrollIntoView({ behavior, block: 'nearest', inline: 'center' });
+        return;
+      }
+
+      const container = editorialListRef.current;
+      if (!container) return;
+
+      const progress = index / (STORYBOARD_SCENES.length - 1);
+      const top =
+        window.scrollY + container.getBoundingClientRect().top + horizontalDistance * progress;
+      window.scrollTo({ top, behavior });
+    },
+    [horizontalDistance]
+  );
+
   const scaleX = useSpring(0, {
     stiffness: 120,
     damping: 28,
@@ -89,6 +133,39 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   useEffect(() => {
     scaleX.set(activeSceneIndex / (STORYBOARD_SCENES.length - 1));
   }, [activeSceneIndex, scaleX]);
+
+  useEffect(() => {
+    if (viewMode !== 'editorial') {
+      setHorizontalDistance(0);
+      return;
+    }
+
+    const updateDistance = () => {
+      const track = fieldTrackRef.current;
+      const viewport = fieldViewportRef.current;
+      if (!track || !viewport) return;
+
+      const nextDistance = Math.max(0, track.scrollWidth - viewport.clientWidth);
+      setHorizontalDistance((current) =>
+        current === nextDistance ? current : nextDistance
+      );
+    };
+
+    updateDistance();
+    window.addEventListener('resize', updateDistance);
+
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateDistance);
+    if (resizeObserver && fieldTrackRef.current && fieldViewportRef.current) {
+      resizeObserver.observe(fieldTrackRef.current);
+      resizeObserver.observe(fieldViewportRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateDistance);
+      resizeObserver?.disconnect();
+    };
+  }, [viewMode]);
 
   useEffect(() => {
     try {
@@ -124,7 +201,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   // GSAP ScrollTrigger: parallax suave sobre fotografías reales e hilo conductor central
   useGSAP(
     () => {
-      if (viewMode !== 'editorial' && viewMode !== 'technical') return;
+      if (viewMode !== 'technical') return;
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (prefersReduced) return;
 
@@ -132,16 +209,39 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       images.forEach((img) => {
         gsap.fromTo(
           img,
-          { scale: 1.06, yPercent: -3 },
+          { scale: 1.1, yPercent: -3, filter: 'blur(3px)', opacity: 0.78 },
           {
-            scale: 1.0,
-            yPercent: 3,
+            scale: 1.02,
+            yPercent: 2,
+            filter: 'blur(0px)',
+            opacity: 1,
             ease: 'none',
             scrollTrigger: {
               trigger: img.parentElement,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true,
+              start: 'top 82%',
+              end: 'center 44%',
+              scrub: 0.5,
+            },
+          }
+        );
+      });
+
+      gsap.utils.toArray<HTMLElement>('.gsap-story-copy').forEach((copy) => {
+        const card = copy.closest<HTMLElement>('[data-scene-card]');
+        if (!card) return;
+
+        gsap.fromTo(
+          copy,
+          { y: 28, opacity: 0.78 },
+          {
+            y: 0,
+            opacity: 1,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 86%',
+              end: 'top 42%',
+              scrub: 0.45,
             },
           }
         );
@@ -199,6 +299,8 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
           setActiveSceneIndex(idx);
           emblaApi?.scrollTo(idx);
           document.getElementById('relato-interactivo')?.scrollIntoView({ behavior: 'smooth' });
+        } else if (viewMode === 'editorial') {
+          scrollToEditorialScene(idx);
         } else {
           document.getElementById(`escena-${idx + 1}`)?.scrollIntoView({
             behavior: 'smooth',
@@ -224,7 +326,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       window.removeEventListener('uiep:goto-scene', gotoHandler);
       window.removeEventListener('uiep:open-photo', lightboxHandler);
     };
-  }, [viewMode, emblaApi, openLightbox]);
+  }, [viewMode, emblaApi, openLightbox, scrollToEditorialScene]);
 
   useEffect(() => {
     if (viewMode === 'carousel' || viewMode === 'documentary' || !('IntersectionObserver' in window))
@@ -239,7 +341,14 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
           }
         });
       },
-      { rootMargin: '-28% 0px -52% 0px', threshold: 0.1 }
+      {
+        root: viewMode === 'editorial' ? fieldViewportRef.current : null,
+        rootMargin:
+          viewMode === 'editorial'
+            ? '0px -42% 0px -42%'
+            : '-28% 0px -52% 0px',
+        threshold: 0.1,
+      }
     );
 
     document.querySelectorAll('[data-scene-card]').forEach((el) => observer.observe(el));
@@ -329,8 +438,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   }, []);
 
   const buildNarration = (scene: StoryboardScene) => {
-    const cleanDialogue = scene.dialogue.replace(/[«»""]/g, '');
-    return `Tarjeta ${scene.number}: ${scene.title}. ${scene.whatLines.join(' ')} ${scene.howDescription} ${cleanDialogue}`;
+    return `Tarjeta ${scene.number}: ${scene.title}. ${scene.howDescription}`;
   };
 
   const speakSingleScene = (index: number) => {
@@ -428,6 +536,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       setDocProgress(0);
       return;
     }
+    if (viewMode === 'editorial') {
+      scrollToEditorialScene(index);
+      return;
+    }
     const target = document.getElementById(`escena-${index + 1}`);
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -437,12 +549,28 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const handleModeSwitch = (mode: ViewMode) => {
     stopSpeech();
     setViewMode(mode);
+    if (mode === 'editorial') {
+      setActiveSceneIndex(0);
+      requestAnimationFrame(() => scrollToEditorialScene(0));
+    }
     if (mode === 'documentary') {
       setDocPlaying(true);
       setDocProgress(0);
     }
     if (ambientOn) soundscape.playHarmonicNote(activeSceneIndex);
   };
+
+  useEffect(() => {
+    const exploreFullStory = () => {
+      stopSpeech();
+      setViewMode('technical');
+      setActiveSceneIndex(0);
+      setControlsOpen(false);
+    };
+
+    window.addEventListener('storyboard:explore', exploreFullStory);
+    return () => window.removeEventListener('storyboard:explore', exploreFullStory);
+  }, [stopSpeech]);
 
   const openScenePhoto = (
     scene: StoryboardScene,
@@ -501,45 +629,39 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       </div>
 
       {/* DOCK FLOTANTE DE NAVEGACIÓN Y ACCESIBILIDAD */}
-      <div className="relative sm:sticky sm:top-2 z-40 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 mb-6 sm:mb-10 no-print">
-        <div className="rounded-2xl sm:rounded-[26px] bg-cream-soft/95 backdrop-blur-xl border border-earth/20 shadow-[0_12px_34px_rgba(55,35,18,0.12)] p-2 sm:px-4 sm:py-3 space-y-2.5">
-          <div className="flex items-center justify-between gap-3 px-1 py-0.5">
-            <div className="min-w-0">
-              <p className="truncate text-sm sm:text-base font-semibold text-ink">
-                {currentScene.title}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setControlsOpen((open) => !open)}
-              aria-label={controlsOpen ? 'Ocultar opciones' : 'Mostrar opciones'}
-              aria-expanded={controlsOpen}
-              aria-controls="mobile-story-controls"
-              title={controlsOpen ? 'Ocultar opciones' : 'Mostrar opciones'}
-              className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-cream-deep/70 hover:text-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5"
-              >
-                <path d="M4 6h16M4 12h16M4 18h16" />
-                <circle cx="16" cy="6" r="2.2" fill="var(--color-cream-soft)" />
-                <circle cx="8" cy="12" r="2.2" fill="var(--color-cream-soft)" />
-                <circle cx="13" cy="18" r="2.2" fill="var(--color-cream-soft)" />
-              </svg>
-            </button>
-          </div>
-
-          <div
-            id="mobile-story-controls"
-            className={`${controlsOpen ? 'flex' : 'hidden'} flex-wrap items-center justify-between gap-2.5`}
+      <div className="relative sm:sticky sm:top-2 z-40 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 mb-3 sm:mb-5 no-print">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setControlsOpen((open) => !open)}
+            aria-label={controlsOpen ? 'Ocultar opciones' : 'Mostrar opciones'}
+            aria-expanded={controlsOpen}
+            aria-controls="mobile-story-controls"
+            title={controlsOpen ? 'Ocultar opciones' : 'Mostrar opciones'}
+            className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full border border-earth/15 bg-cream-soft/85 text-ink-muted shadow-sm backdrop-blur-md transition-colors hover:bg-cream-deep/70 hover:text-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
           >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16" />
+              <circle cx="16" cy="6" r="2.2" fill="var(--color-cream-soft)" />
+              <circle cx="8" cy="12" r="2.2" fill="var(--color-cream-soft)" />
+              <circle cx="13" cy="18" r="2.2" fill="var(--color-cream-soft)" />
+            </svg>
+          </button>
+        </div>
+
+        <div
+          id="mobile-story-controls"
+          className={`${controlsOpen ? 'mt-2 flex rounded-2xl border border-earth/20 bg-cream-soft/95 p-3 shadow-[0_12px_34px_rgba(55,35,18,0.12)] backdrop-blur-xl' : 'hidden'} flex-wrap items-center justify-between gap-2.5`}
+        >
             <div
               className="inline-flex flex-wrap items-center rounded-full bg-cream-deep/70 p-1 border border-earth/15"
               role="tablist"
@@ -548,10 +670,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             >
               {(
                 [
+                  { id: 'technical', label: 'Ficha Completa' },
                   { id: 'editorial', label: 'Recorrido en campo' },
                   { id: 'documentary', label: 'Modo Documental' },
                   { id: 'carousel', label: 'Carrusel Táctil' },
-                  { id: 'technical', label: 'Ficha Completa' },
                 ] as const
               ).map((tab) => {
                 const active = viewMode === tab.id;
@@ -668,7 +790,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 </button>
               );
             })}
-          </div>
         </div>
       </div>
 
@@ -947,15 +1068,85 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
           /* ----------------------------------------------------------------
              RECORRIDO EN CAMPO / FICHA COMPLETA
              ---------------------------------------------------------------- */
-          <div ref={editorialListRef} className="relative">
-            <div
-              className="hidden lg:block absolute left-1/2 top-8 bottom-8 w-px bg-earth/15 -translate-x-1/2 pointer-events-none no-print"
-              aria-hidden="true"
-            >
-              <div className="gsap-spine-progress w-full h-full bg-gradient-to-b from-forest via-olive to-terracotta origin-top" />
-            </div>
+          <div
+            ref={editorialListRef}
+            className={viewMode === 'editorial' ? 'field-scroll-container relative' : 'relative'}
+            style={
+              viewMode === 'editorial'
+                ? { height: `calc(100svh + ${horizontalDistance}px)` }
+                : undefined
+            }
+          >
+            {viewMode === 'technical' && (
+              <div
+                className="hidden lg:block absolute left-1/2 top-8 bottom-8 w-px bg-earth/15 -translate-x-1/2 pointer-events-none no-print"
+                aria-hidden="true"
+              >
+                <div className="gsap-spine-progress w-full h-full bg-gradient-to-b from-forest via-olive to-terracotta origin-top" />
+              </div>
+            )}
 
-            <div className="space-y-8 md:space-y-12 lg:space-y-20 relative z-10">
+            <div className={viewMode === 'editorial' ? 'field-scroll-sticky relative z-10' : 'relative z-10'}>
+              {viewMode === 'editorial' && (
+                <div className="field-scroll-heading">
+                  <div>
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-earth">
+                      Recorrido por el territorio
+                    </p>
+                    <h2 className="mt-1 font-serif text-2xl font-semibold leading-tight text-ink sm:text-3xl">
+                      De la escucha a las propuestas
+                    </h2>
+                  </div>
+                  <p className="hidden max-w-xs text-right text-sm leading-relaxed text-ink-muted sm:block">
+                    Explora los ocho momentos del diagnóstico.
+                  </p>
+                </div>
+              )}
+
+              <div
+                ref={fieldViewportRef}
+                className={viewMode === 'editorial' ? 'field-scroll-viewport' : 'contents'}
+                role={viewMode === 'editorial' ? 'region' : undefined}
+                aria-label={
+                  viewMode === 'editorial'
+                    ? 'Recorrido horizontal de ocho tarjetas. Usa las flechas izquierda y derecha.'
+                    : undefined
+                }
+                tabIndex={viewMode === 'editorial' ? 0 : undefined}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key === 'ArrowRight' && activeSceneIndex < STORYBOARD_SCENES.length - 1) {
+                    event.preventDefault();
+                    jumpToScene(activeSceneIndex + 1);
+                  } else if (event.key === 'ArrowLeft' && activeSceneIndex > 0) {
+                    event.preventDefault();
+                    jumpToScene(activeSceneIndex - 1);
+                  }
+                }}
+                onFocusCapture={(event) => {
+                  const card = (event.target as HTMLElement).closest<HTMLElement>(
+                    '[data-scene-index]'
+                  );
+                  const index = Number(card?.dataset.sceneIndex);
+                  if (card && Number.isInteger(index)) {
+                    setActiveSceneIndex(index);
+                    scrollToEditorialScene(index);
+                  }
+                }}
+              >
+            <motion.div
+              ref={fieldTrackRef}
+              style={
+                viewMode === 'editorial'
+                  ? { transform: horizontalTransform }
+                  : undefined
+              }
+              className={
+                viewMode === 'editorial'
+                  ? 'field-scroll-track'
+                  : 'space-y-8 md:space-y-12 lg:space-y-20 relative z-10'
+              }
+            >
               {STORYBOARD_SCENES.map((scene, index) => {
                 const isReversed = index % 2 === 1 && viewMode === 'editorial';
                 const isTechExpanded = viewMode === 'technical';
@@ -975,7 +1166,12 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 const isSpeakingThis = speakingIndex === index;
 
                 return (
-                  <div key={scene.number} className="relative print-scene-break">
+                  <div
+                    key={scene.number}
+                    className={`relative print-scene-break ${
+                      viewMode === 'editorial' ? 'field-scroll-item' : ''
+                    }`}
+                  >
                     <motion.article
                       id={`escena-${scene.number}`}
                       data-scene-card
@@ -1076,7 +1272,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                         <div
                           className={`lg:col-span-6 space-y-4 ${
                             isReversed ? 'lg:order-1' : 'lg:order-2'
-                          }`}
+                          } gsap-story-copy`}
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
@@ -1120,7 +1316,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                             <div className="mt-6 pt-6 border-t border-earth/15 grid grid-cols-1 md:grid-cols-12 gap-5 text-sm">
                               <div className="md:col-span-8 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
                                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest font-medium">
-                                  Evidencia fotográfica real en campo
+                                  Contexto de la imagen
                                 </p>
                                 <p className="text-ink-soft leading-relaxed">
                                   {scene.visualDescription}
@@ -1143,6 +1339,21 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                   </div>
                 );
               })}
+            </motion.div>
+              </div>
+              {viewMode === 'editorial' && (
+                <div className="field-scroll-footer" aria-hidden="true">
+                  <span className="font-mono text-[10px] font-semibold tracking-[0.16em] text-forest">
+                    {currentScene.numeral}/{String(STORYBOARD_SCENES.length).padStart(2, '0')}
+                  </span>
+                  <span className="field-scroll-scroll-hint font-mono text-[9px] uppercase tracking-[0.13em] text-ink-muted">
+                    Desplázate para continuar
+                  </span>
+                  <span className="field-scroll-swipe-hint font-mono text-[9px] uppercase tracking-[0.13em] text-ink-muted">
+                    Desliza horizontalmente
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

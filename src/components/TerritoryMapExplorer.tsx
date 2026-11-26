@@ -33,14 +33,14 @@ export default function TerritoryMapExplorer({ baseUrl }: TerritoryMapExplorerPr
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl space-y-2">
             <p className="font-mono text-xs uppercase tracking-[0.16em] text-earth font-medium">
-              Del diagnóstico a las propuestas reales
+              Cinco puntos del diagnóstico
             </p>
             <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-ink leading-tight">
               Frentes de atención en San José Buenavista
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-ink-muted max-w-xs">
-            Mapa de la zona postal 75685. Selecciona un frente para consultar el diagnóstico y la propuesta.
+            Selecciona un punto para consultar el hallazgo y la propuesta correspondiente.
           </p>
         </div>
 

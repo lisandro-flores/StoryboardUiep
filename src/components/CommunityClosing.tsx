@@ -15,9 +15,6 @@ export default function CommunityClosing() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <article className="rounded-[24px] border border-earth/20 bg-cream-soft p-5 sm:p-6 shadow-[0_10px_30px_rgba(70,45,25,0.05)]">
-            <p className="font-mono text-xs uppercase tracking-[0.16em] text-forest font-medium">
-              El propósito
-            </p>
             <h2 className="mt-2 font-serif text-2xl font-semibold text-ink">
               ¿Para qué se realiza el diagnóstico?
             </h2>
@@ -51,7 +48,7 @@ export default function CommunityClosing() {
         <div className="space-y-6">
           <div className="max-w-2xl space-y-2">
             <p className="font-mono text-xs uppercase tracking-[0.16em] text-forest font-medium">
-              El diagnóstico continúa
+              Siguientes pasos
             </p>
             <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-ink leading-tight">
               ¿Cómo puedes participar?
