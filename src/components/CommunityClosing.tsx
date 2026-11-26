@@ -28,7 +28,7 @@ export default function CommunityClosing({ baseUrl = '/' }: CommunityClosingProp
               <article className="h-full rounded-card border border-earth/20 bg-cream-soft p-6 sm:p-7 shadow-card flex flex-col justify-between">
                 <div>
                   <p className="font-mono text-xs uppercase tracking-[0.16em] text-earth font-medium">
-                    Propósito del diagnóstico
+                    Para qué sirve
                   </p>
                   <h2 className="mt-2 font-serif text-2xl sm:text-[1.7rem] font-semibold text-ink leading-snug">
                     ¿Para qué se realiza el diagnóstico?

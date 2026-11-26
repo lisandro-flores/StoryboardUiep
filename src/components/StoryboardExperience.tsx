@@ -652,19 +652,19 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             <div className="max-w-2xl space-y-2">
               <BlurFade inView delay={0}>
                 <p className="font-mono text-xs uppercase tracking-[0.16em] text-earth font-medium">
-                  El proceso, paso a paso
+                  Paso a paso en San José Buenavista
                 </p>
               </BlurFade>
               <BlurFade inView delay={STAGGER}>
                 <h2 className="font-serif text-3xl sm:text-5xl font-semibold text-ink leading-[1.06] tracking-[-0.02em] [text-wrap:balance]">
-                  De la escucha en campo a{' '}
-                  <span className="italic font-medium text-forest">propuestas compartidas</span>
+                  Así trabajamos junto con{' '}
+                  <span className="italic font-medium text-forest">la comunidad</span>
                 </h2>
               </BlurFade>
             </div>
             <BlurFade inView delay={STAGGER * 2}>
               <p className="text-xs sm:text-sm text-ink-muted max-w-xs leading-relaxed">
-                Ocho tarjetas con evidencia real en territorio y cuatro modos para explorarlas a tu ritmo.
+                Conoce en ocho pasos los recorridos, pláticas y propuestas realizadas con vecinas, vecinos y autoridades.
               </p>
             </BlurFade>
           </div>
@@ -1276,14 +1276,14 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 <div className="field-scroll-heading">
                   <div>
                     <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-earth">
-                      Recorrido por el territorio
+                      Paso a paso
                     </p>
                     <h2 className="mt-1 font-serif text-2xl font-semibold leading-tight text-ink sm:text-3xl">
-                      De la escucha a las propuestas
+                      Así trabajamos junto con la comunidad
                     </h2>
                   </div>
                   <p className="hidden max-w-xs text-right text-sm leading-relaxed text-ink-muted sm:block">
-                    Explora los ocho momentos del diagnóstico.
+                    Conoce los ocho pasos del trabajo realizado.
                   </p>
                 </div>
               )}
