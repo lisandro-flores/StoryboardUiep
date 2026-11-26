@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, MotionConfig } from 'motion/react';
 
 /**
  * Lienzo atmosférico vivo con curvas de nivel topográficas de San José Buenavista
@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
  */
 export default function AmbientBackdrop() {
   return (
+    <MotionConfig reducedMotion="user">
     <div
       className="fixed inset-0 pointer-events-none -z-10 overflow-hidden select-none no-print"
       aria-hidden="true"
@@ -68,5 +69,6 @@ export default function AmbientBackdrop() {
         />
       </svg>
     </div>
+    </MotionConfig>
   );
 }

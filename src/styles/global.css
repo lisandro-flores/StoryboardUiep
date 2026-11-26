@@ -76,6 +76,31 @@
   will-change: transform;
 }
 
+@keyframes blurFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.blur-fade-in {
+  animation: blurFadeIn 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ken-burns-active,
+  .blur-fade-in {
+    animation: none;
+    will-change: auto;
+  }
+}
+
 /* Perspectiva 3D suave para láminas interactivas */
 .perspective-stage {
   perspective: 1200px;

@@ -11,7 +11,7 @@ interface TiltPlateProps {
   children: ReactNode;
   className?: string;
   maxTilt?: number;
-  onClick?: () => void;
+  onClick?: (trigger: HTMLDivElement) => void;
   ariaLabel?: string;
 }
 
@@ -54,6 +54,10 @@ export default function TiltPlate({
     mouseY.set(0.5);
   };
 
+  const handleClick = () => {
+    if (onClick && ref.current) onClick(ref.current);
+  };
+
   return (
     <div className="perspective-stage">
       <motion.div
@@ -61,13 +65,13 @@ export default function TiltPlate({
         style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
-        onClick={onClick}
+        onClick={onClick ? handleClick : undefined}
         onKeyDown={
           onClick
             ? (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onClick();
+                  handleClick();
                 }
               }
             : undefined

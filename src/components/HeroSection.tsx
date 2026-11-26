@@ -1,7 +1,9 @@
 import { useRef } from 'react';
 import gsap from 'gsap';
+import { MotionConfig } from 'motion/react';
 import { useGSAP } from '@gsap/react';
 import TiltPlate from './TiltPlate';
+import BlurFade from './BlurFade';
 
 gsap.registerPlugin(useGSAP);
 
@@ -19,42 +21,22 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
 
       const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-      tl.from('.hero-topbar', { y: -18, opacity: 0, duration: 0.65 })
-        .from(
-          '.hero-mask-line',
-          {
-            yPercent: 110,
-            opacity: 0,
-            duration: 0.85,
-            stagger: 0.1,
-          },
-          '-=0.35'
-        )
-        .from(
-          '.hero-fade-up',
-          {
-            y: 20,
-            opacity: 0,
-            duration: 0.65,
-            stagger: 0.08,
-          },
-          '-=0.45'
-        )
-        .from(
-          '.hero-plate',
-          {
-            scale: 0.95,
-            y: 26,
-            opacity: 0,
-            duration: 0.9,
-          },
-          '-=0.65'
-        );
+      tl.from('.hero-topbar', { y: -18, opacity: 0, duration: 0.65 }).from(
+        '.hero-plate',
+        {
+          scale: 0.95,
+          y: 26,
+          opacity: 0,
+          duration: 0.9,
+        },
+        '-=0.35'
+      );
     },
     { scope: containerRef }
   );
 
   return (
+    <MotionConfig reducedMotion="user">
     <header ref={containerRef} className="relative pt-4 pb-8 sm:pt-10 sm:pb-14 overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
         {/* Barra institucional superior */}
@@ -83,28 +65,57 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
         {/* Escenario principal con fotografía documental real */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 items-center pt-1 sm:pt-2">
           <div className="lg:col-span-7 space-y-4 sm:space-y-5">
-            <p className="hero-fade-up text-[15px] sm:text-lg text-ink-soft leading-relaxed max-w-xl">
-              Este diagnóstico reúne la experiencia de habitantes de{' '}
-              <strong className="font-semibold text-ink">San José Buenavista</strong> y el trabajo
-              técnico de estudiantes de Ingeniería Civil Sustentable de la UIEP. Su propósito es
-              identificar prioridades locales y aportar una base clara para desarrollar propuestas
-              pertinentes al territorio.
-            </p>
-            <p className="hero-fade-up text-sm sm:text-base text-ink-soft leading-relaxed max-w-xl">
-              El proceso integró coordinación con autoridades, recorridos de campo, encuestas,
-              conversatorios, mapa social y análisis de información. Así, las propuestas se
-              fundamentan en necesidades expresadas por la comunidad y en criterios de ingeniería
-              sustentable.
-            </p>
+            <BlurFade delay={0.02} className="space-y-3">
+              <p className="font-mono text-[10px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-forest">
+                Diagnóstico territorial · San José Buenavista
+              </p>
+              <h1 className="font-serif text-[2.4rem] sm:text-5xl lg:text-[3.7rem] font-semibold leading-[1.02] tracking-[-0.035em] text-ink">
+                Diagnóstico Comunitario{' '}
+                <span className="italic font-medium text-forest">Participativo</span>
+              </h1>
+            </BlurFade>
+            <BlurFade delay={0.12}>
+              <p className="text-[15px] sm:text-lg text-ink-soft leading-relaxed max-w-xl">
+                Un trabajo conjunto entre habitantes, autoridades y estudiantes de la UIEP para
+                identificar prioridades y orientar propuestas de ingeniería sustentable en{' '}
+                <strong className="font-semibold text-ink">San José Buenavista</strong>.
+              </p>
+            </BlurFade>
+            <BlurFade delay={0.2} className="space-y-2.5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted">
+                Así se realizó
+              </p>
+              <ul
+                aria-label="Métodos del diagnóstico"
+                className="flex flex-wrap gap-2 text-xs sm:text-sm text-ink-soft"
+              >
+                {[
+                  'Recorridos de campo',
+                  'Encuestas y conversatorios',
+                  'Mapa social',
+                  'Análisis técnico',
+                ].map((method) => (
+                  <li
+                    key={method}
+                    className="rounded-full border border-earth/20 bg-cream-soft/80 px-3 py-1.5"
+                  >
+                    {method}
+                  </li>
+                ))}
+              </ul>
+            </BlurFade>
 
-            <div className="hero-fade-up flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1 no-print">
+            <BlurFade
+              delay={0.28}
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1 no-print"
+            >
               <a
                 href="#relato-interactivo"
                 className="inline-flex min-h-12 items-center justify-center rounded-full bg-forest px-6 py-3 text-sm font-semibold text-cream shadow-[0_8px_20px_rgba(31,74,35,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-forest-dark sm:w-fit"
               >
                 Explorar el proceso
               </a>
-            </div>
+            </BlurFade>
           </div>
 
           {/* Fotografía real principal de la brigada en San José Buenavista */}
@@ -142,5 +153,6 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
 
       </div>
     </header>
+    </MotionConfig>
   );
 }

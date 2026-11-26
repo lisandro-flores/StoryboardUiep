@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, MotionConfig } from 'motion/react';
 import { PARTICIPATION_STEPS, BRIGADE_TEAM } from '../data/storyboard';
 
 const COMMUNITY_IMPACTS = [
@@ -10,6 +10,7 @@ const COMMUNITY_IMPACTS = [
 
 export default function CommunityClosing() {
   return (
+    <MotionConfig reducedMotion="user">
     <section id="como-participar" className="pb-16 pt-2 scroll-mt-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -21,14 +22,17 @@ export default function CommunityClosing() {
               ¿Para qué se realiza el diagnóstico?
             </h2>
             <p className="mt-2 text-sm sm:text-base text-ink-soft leading-relaxed">
-              Identificar las necesidades reales de la comunidad para trabajar en conjunto en
-              soluciones que mejoren su calidad de vida.
+              Organizar las prioridades expresadas por la comunidad y ofrecer una base para
+              construir propuestas pertinentes junto con sus habitantes.
             </p>
           </article>
 
           <article className="rounded-[24px] border border-earth/20 bg-olive-pale/45 p-5 sm:p-6">
             <p className="font-mono text-xs uppercase tracking-[0.16em] text-forest font-medium">
-              Impacto esperado en nuestra comunidad
+              Cambios que se busca impulsar
+            </p>
+            <p className="mt-1 text-xs text-ink-muted">
+              Aspiraciones del proceso; no significan que las obras ya se hayan realizado.
             </p>
             <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-ink-soft">
               {COMMUNITY_IMPACTS.map((impact) => (
@@ -121,5 +125,6 @@ export default function CommunityClosing() {
         </motion.footer>
       </div>
     </section>
+    </MotionConfig>
   );
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useSpring } from 'motion/react';
+import { useState, useEffect, useCallback, useRef, type KeyboardEvent } from 'react';
+import { motion, AnimatePresence, MotionConfig, useSpring } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import gsap from 'gsap';
@@ -16,6 +16,13 @@ type ViewMode = 'editorial' | 'documentary' | 'carousel' | 'technical';
 
 interface StoryboardExperienceProps {
   baseUrl: string;
+}
+
+interface LightboxMedia {
+  jpg: string;
+  alt: string;
+  label: string;
+  subtitle: string;
 }
 
 const ACCENT_STYLES: Record<
@@ -50,12 +57,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
   // Permite alternar entre las dos fotografías de algunas tarjetas
   const [secondaryActiveMap, setSecondaryActiveMap] = useState<Record<number, boolean>>({});
-  const [lightboxMedia, setLightboxMedia] = useState<{
-    jpg: string;
-    alt: string;
-    label: string;
-    subtitle: string;
-  } | null>(null);
+  const [lightboxMedia, setLightboxMedia] = useState<LightboxMedia | null>(null);
 
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [isPlayingAll, setIsPlayingAll] = useState(false);
@@ -67,6 +69,16 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const [docProgress, setDocProgress] = useState(0);
 
   const editorialListRef = useRef<HTMLDivElement>(null);
+  const lightboxDialogRef = useRef<HTMLDivElement>(null);
+  const lightboxCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const lightboxTriggerRef = useRef<HTMLElement | null>(null);
+
+  const openLightbox = useCallback((media: LightboxMedia, trigger?: HTMLElement) => {
+    lightboxTriggerRef.current =
+      trigger ??
+      (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    setLightboxMedia(media);
+  }, []);
 
   const scaleX = useSpring(0, {
     stiffness: 120,
@@ -203,7 +215,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
         label: string;
         subtitle: string;
       }>;
-      if (custom.detail) setLightboxMedia(custom.detail);
+      if (custom.detail) openLightbox(custom.detail);
     };
 
     window.addEventListener('uiep:goto-scene', gotoHandler);
@@ -212,7 +224,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       window.removeEventListener('uiep:goto-scene', gotoHandler);
       window.removeEventListener('uiep:open-photo', lightboxHandler);
     };
-  }, [viewMode, emblaApi]);
+  }, [viewMode, emblaApi, openLightbox]);
 
   useEffect(() => {
     if (viewMode === 'carousel' || viewMode === 'documentary' || !('IntersectionObserver' in window))
@@ -238,6 +250,27 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     const onKeyDown = (e: KeyboardEvent) => {
       if (lightboxMedia) {
         if (e.key === 'Escape') setLightboxMedia(null);
+        if (e.key === 'Tab') {
+          const dialog = lightboxDialogRef.current;
+          const focusable = dialog?.querySelectorAll<HTMLElement>(
+            'button:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'
+          );
+          if (!dialog || !focusable?.length) {
+            e.preventDefault();
+            return;
+          }
+
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          const active = document.activeElement;
+          if (e.shiftKey && (active === first || !dialog.contains(active))) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && (active === last || !dialog.contains(active))) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
         return;
       }
       if (viewMode === 'carousel' && emblaApi) {
@@ -257,6 +290,19 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [lightboxMedia, viewMode, emblaApi]);
+
+  useEffect(() => {
+    if (!lightboxMedia) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    lightboxCloseButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (lightboxTriggerRef.current?.isConnected) lightboxTriggerRef.current.focus();
+    };
+  }, [lightboxMedia]);
 
   useEffect(() => {
     return () => {
@@ -391,7 +437,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const handleModeSwitch = (mode: ViewMode) => {
     stopSpeech();
     setViewMode(mode);
-    setControlsOpen(false);
     if (mode === 'documentary') {
       setDocPlaying(true);
       setDocProgress(0);
@@ -399,19 +444,46 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     if (ambientOn) soundscape.playHarmonicNote(activeSceneIndex);
   };
 
-  const openScenePhoto = (scene: StoryboardScene, useSecondary = false) => {
+  const openScenePhoto = (
+    scene: StoryboardScene,
+    useSecondary = false,
+    trigger?: HTMLElement
+  ) => {
     const media = useSecondary && scene.secondaryPhoto ? scene.secondaryPhoto : null;
-    setLightboxMedia({
-      jpg: `${baseUrl}${media ? media.jpg : scene.imageJpg}`,
-      alt: media ? media.alt : scene.imageAlt,
-      label: `TARJETA ${scene.numeral} · ${scene.locationTag}`,
-      subtitle: `${scene.whatLines[0]} ${scene.whatLines[1]}`,
-    });
+    openLightbox(
+      {
+        jpg: `${baseUrl}${media ? media.jpg : scene.imageJpg}`,
+        alt: media ? media.alt : scene.imageAlt,
+        label: `TARJETA ${scene.numeral} · ${scene.locationTag}`,
+        subtitle: `${scene.whatLines[0]} ${scene.whatLines[1]}`,
+      },
+      trigger
+    );
   };
 
   const currentScene = STORYBOARD_SCENES[activeSceneIndex] ?? STORYBOARD_SCENES[0];
 
+  const handleViewModeKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const tabs = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+    );
+    const currentIndex = tabs.findIndex((tab) => tab === document.activeElement);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = tabs.length - 1;
+    else return;
+
+    event.preventDefault();
+    tabs[nextIndex].focus();
+    tabs[nextIndex].click();
+  };
+
   return (
+    <MotionConfig reducedMotion="user">
     <section id="relato-interactivo" className="relative pb-20">
       <div
         role="progressbar"
@@ -472,6 +544,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               className="inline-flex flex-wrap items-center rounded-full bg-cream-deep/70 p-1 border border-earth/15"
               role="tablist"
               aria-label="Modo de visualización del proceso"
+              onKeyDown={handleViewModeKeyDown}
             >
               {(
                 [
@@ -487,7 +560,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                     key={tab.id}
                     type="button"
                     role="tab"
+                    id={`story-view-tab-${tab.id}`}
+                    aria-controls="story-view-panel"
                     aria-selected={active}
+                    tabIndex={active ? 0 : -1}
                     onClick={() => handleModeSwitch(tab.id)}
                     className={`relative px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
                       active ? 'text-cream' : 'text-ink-soft hover:text-ink'
@@ -597,7 +673,13 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       </div>
 
       {/* CONTENIDO PRINCIPAL */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div
+        id="story-view-panel"
+        role="tabpanel"
+        aria-labelledby={`story-view-tab-${viewMode}`}
+        tabIndex={0}
+        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
         {viewMode === 'documentary' ? (
           /* ----------------------------------------------------------------
              MODO DOCUMENTAL CON FOTOS REALES Y EFECTO KEN BURNS
@@ -723,7 +805,9 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
               <button
                 type="button"
-                onClick={() => openScenePhoto(currentScene, false)}
+                onClick={(event) =>
+                  openScenePhoto(currentScene, false, event.currentTarget)
+                }
                 className="text-xs sm:text-sm font-semibold text-forest underline underline-offset-4 cursor-pointer"
               >
                 Ver fotografía completa con zoom
@@ -760,9 +844,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               <div className="flex touch-pan-y">
                 {STORYBOARD_SCENES.map((scene) => (
                   <div key={scene.number} className="flex-[0_0_100%] min-w-0 relative select-none">
-                    <div
-                      onClick={() => openScenePhoto(scene, false)}
-                      className="relative cursor-zoom-in overflow-hidden bg-cream-deep aspect-[4/3] sm:aspect-video"
+                    <button
+                      type="button"
+                      onClick={(event) => openScenePhoto(scene, false, event.currentTarget)}
+                      aria-label={`Ampliar fotografía de la tarjeta ${scene.numeral}: ${scene.imageAlt}`}
+                      className="relative block w-full cursor-zoom-in overflow-hidden bg-cream-deep p-0 text-left aspect-[4/3] sm:aspect-video focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-cream"
                     >
                       <picture>
                         <source srcSet={`${baseUrl}${scene.imageWebp}`} type="image/webp" />
@@ -789,7 +875,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       <div className="absolute bottom-3 right-4 rounded-full bg-ink/75 backdrop-blur-xs px-3 py-1 text-[11px] font-medium text-cream">
                         Toca para ver foto completa
                       </div>
-                    </div>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -909,7 +995,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                         >
                           <TiltPlate
                             maxTilt={3.8}
-                            onClick={() => openScenePhoto(scene, showSecondary)}
+                            onClick={(trigger) => openScenePhoto(scene, showSecondary, trigger)}
                             ariaLabel={`Ampliar fotografía real de la tarjeta ${scene.number}: ${scene.title}`}
                             className="group overflow-hidden rounded-[22px] border border-earth/20 bg-cream-deep cursor-zoom-in"
                           >
@@ -1076,7 +1162,8 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             className="fixed inset-0 z-50 bg-ink/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 no-print"
             role="dialog"
             aria-modal="true"
-            aria-label={lightboxMedia.label}
+            aria-labelledby="lightbox-title"
+            aria-describedby="lightbox-description"
           >
             <motion.div
               initial={{ scale: 0.94, opacity: 0, y: 14 }}
@@ -1084,6 +1171,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               exit={{ scale: 0.96, opacity: 0, y: 10 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
               onClick={(e) => e.stopPropagation()}
+              ref={lightboxDialogRef}
               className="max-w-5xl w-full rounded-[28px] bg-cream-soft border border-earth/30 overflow-hidden shadow-2xl"
             >
               <TransformWrapper
@@ -1096,7 +1184,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 {({ zoomIn, zoomOut, resetTransform }) => (
                   <>
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-earth/15">
-                      <span className="font-mono text-xs font-semibold text-forest truncate">
+                      <span id="lightbox-title" className="font-mono text-xs font-semibold text-forest truncate">
                         {lightboxMedia.label}
                       </span>
 
@@ -1125,6 +1213,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                         <button
                           type="button"
                           onClick={() => setLightboxMedia(null)}
+                          ref={lightboxCloseButtonRef}
                           className="rounded-full bg-forest px-4 py-1 text-xs font-semibold text-cream hover:bg-forest-dark ml-1 cursor-pointer"
                         >
                           Cerrar
@@ -1146,7 +1235,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                     </div>
 
                     <div className="px-5 py-3.5 bg-cream-soft border-t border-earth/15 text-center">
-                      <p className="font-serif text-sm sm:text-base text-ink">
+                      <p id="lightbox-description" className="font-serif text-sm sm:text-base text-ink">
                         {lightboxMedia.subtitle}
                       </p>
                     </div>
@@ -1158,5 +1247,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
         )}
       </AnimatePresence>
     </section>
+    </MotionConfig>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { TERRITORY_NODES } from '../data/storyboard';
 import { soundscape } from '../utils/soundscape';
 
@@ -27,6 +27,7 @@ export default function TerritoryMapExplorer({ baseUrl }: TerritoryMapExplorerPr
   };
 
   return (
+    <MotionConfig reducedMotion="user">
     <section id="mapa-territorial" className="pb-20 scroll-mt-28 no-print">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -171,5 +172,6 @@ export default function TerritoryMapExplorer({ baseUrl }: TerritoryMapExplorerPr
         </div>
       </div>
     </section>
+    </MotionConfig>
   );
 }

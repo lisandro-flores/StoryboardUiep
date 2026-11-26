@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 
 interface AudioWaveProps {
   active: boolean;
@@ -9,6 +9,7 @@ interface AudioWaveProps {
  * Indicador cinético de voz mediante barras animadas con Motion (cero iconos ni emojis)
  */
 export default function AudioWave({ active, light = false }: AudioWaveProps) {
+  const shouldReduceMotion = useReducedMotion();
   const barColor = light ? 'bg-cream' : 'bg-forest';
   const heights = [
     [4, 13, 6, 15, 4],
@@ -24,12 +25,12 @@ export default function AudioWave({ active, light = false }: AudioWaveProps) {
           key={i}
           className={`w-[2.2px] rounded-full ${barColor}`}
           animate={
-            active
+            active && !shouldReduceMotion
               ? { height: seq }
               : { height: i % 2 === 0 ? 5 : 9, opacity: 0.65 }
           }
           transition={
-            active
+            active && !shouldReduceMotion
               ? {
                   duration: 0.85 + i * 0.08,
                   repeat: Infinity,
