@@ -221,6 +221,86 @@ export const COMMUNITY_IMPACTS = [
   'Vínculo intercultural vivo entre la UIEP y San José Buenavista.',
 ];
 
+export interface TerritoryNode {
+  id: string;
+  code: string;
+  zone: string;
+  x: number; // porcentaje 0-100 en el plano territorial
+  y: number; // porcentaje 0-100 en el plano territorial
+  diagnosis: string;
+  proposal: string;
+  benefit: string;
+  relatedScene: number;
+}
+
+export const TERRITORY_NODES: TerritoryNode[] = [
+  {
+    id: 'barranca',
+    code: 'NODO 01',
+    zone: 'Cruce de la Barranca',
+    x: 24,
+    y: 64,
+    diagnosis:
+      'Paso estrecho sin barandales de protección, riesgoso para niñas, niños y personas adultas mayores durante la temporada de lluvias.',
+    proposal:
+      'Diseño de puente peatonal seguro con estructura firme, barandales de protección y accesos nivelados.',
+    benefit: 'Cruce cotidiano seguro todo el año para familias y escolares.',
+    relatedScene: 6,
+  },
+  {
+    id: 'escuela',
+    code: 'NODO 02',
+    zone: 'Escuela Comunitaria',
+    x: 46,
+    y: 38,
+    diagnosis:
+      'Accesos principales con desniveles y escalones pronunciados que dificultan el paso con bastón, carriola o silla de ruedas.',
+    proposal:
+      'Construcción de rampas incluyentes con pendiente suave normada, superficie antiderrapante y pasamanos continuos.',
+    benefit: 'Inclusión y autonomía para niñas, niños y adultos mayores.',
+    relatedScene: 4,
+  },
+  {
+    id: 'calles',
+    code: 'NODO 03',
+    zone: 'Calles de Tierra y Piedra',
+    x: 62,
+    y: 68,
+    diagnosis:
+      'Desgaste por escurrimientos de agua, charcos, polvo y piedra suelta que complican el tránsito peatonal y vehicular.',
+    proposal:
+      'Mejoramiento sustentable con materiales regionales mixtos (piedra local, base compactada y cunetas laterales de desagüe pluvial).',
+    benefit: 'Mayor durabilidad, identidad local y menor impacto ambiental.',
+    relatedScene: 6,
+  },
+  {
+    id: 'techado',
+    code: 'NODO 04',
+    zone: 'Techado y Espacio Vecinal',
+    x: 52,
+    y: 52,
+    diagnosis:
+      'Necesidad de un punto de encuentro abierto donde todas las edades puedan dialogar y priorizar sin imposiciones externas.',
+    proposal:
+      'Talleres participativos, mesas de dibujo del mapa social y validación comunitaria junto con comités y autoridades.',
+    benefit: 'Decisiones guiadas directamente por la voz de San José Buenavista.',
+    relatedScene: 5,
+  },
+  {
+    id: 'servicios',
+    code: 'NODO 05',
+    zone: 'Agua y Servicios Básicos',
+    x: 78,
+    y: 42,
+    diagnosis:
+      'Inquietudes vecinales sobre conducción, cuidado del agua y ordenamiento de tomas y servicios en zonas habitacionales.',
+    proposal:
+      'Diagnóstico técnico de puntos críticos, registros protegidos y criterios de aprovechamiento sustentable del agua.',
+    benefit: 'Planeación ordenada para el bienestar de las familias.',
+    relatedScene: 4,
+  },
+];
+
 export const BRIGADE_TEAM = {
   institution: 'Universidad Intercultural del Estado de Puebla (UIEP)',
   program: 'Ingeniería Civil Sustentable · Vinculación Comunitaria',

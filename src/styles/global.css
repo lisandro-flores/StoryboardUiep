@@ -7,7 +7,7 @@
 
   --color-cream: #FAF3E8;
   --color-cream-soft: #FFFBF4;
-  --color-cream-deep: #F1E5D2;
+  --color-cream-deep: #EFE2CE;
   --color-forest: #1F4A23;
   --color-forest-dark: #143217;
   --color-olive: #7D9154;
@@ -18,9 +18,9 @@
   --color-rose: #EAB6BA;
   --color-rose-pale: #F9E6E8;
   --color-earth: #8E6545;
-  --color-ink: #1C1815;
-  --color-ink-soft: #4F453C;
-  --color-ink-muted: #7A6C5E;
+  --color-ink: #1B1714;
+  --color-ink-soft: #4A4037;
+  --color-ink-muted: #76685A;
 }
 
 @layer base {
@@ -30,37 +30,57 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    selection-background-color: #F1C28B;
+    transition: font-size 0.25s ease;
+  }
+
+  /* Modo de accesibilidad UX para adultos mayores y lectura cómoda en exterior */
+  html.comfort-reading {
+    font-size: 112.5%;
   }
 
   ::selection {
-    background-color: rgba(241, 194, 139, 0.55);
-    color: #1C1815;
+    background-color: rgba(241, 194, 139, 0.6);
+    color: #1B1714;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
     background-color: var(--color-cream);
-    background-image:
-      radial-gradient(at 12% 8%, rgba(241, 194, 139, 0.24) 0px, transparent 48%),
-      radial-gradient(at 88% 18%, rgba(125, 145, 84, 0.14) 0px, transparent 45%),
-      radial-gradient(at 50% 85%, rgba(234, 182, 186, 0.18) 0px, transparent 52%);
     overflow-x: hidden;
   }
 }
 
-/* Textura editorial sutil de papel algodón sin ruido invasivo */
+/* Grano fino editorial de papel acuarela */
 .paper-grain {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 50;
-  opacity: 0.032;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Ocultar barra de scroll horizontal en tiras numéricas */
+/* Movimiento cinematográfico Ken Burns para el Modo Documental */
+@keyframes kenBurnsSlow {
+  0% {
+    transform: scale(1) translate3d(0%, 0%, 0);
+  }
+  100% {
+    transform: scale(1.075) translate3d(-1.2%, -0.8%, 0);
+  }
+}
+
+.ken-burns-active {
+  animation: kenBurnsSlow 11s ease-out forwards;
+  will-change: transform;
+}
+
+/* Perspectiva 3D suave para láminas interactivas */
+.perspective-stage {
+  perspective: 1200px;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -69,7 +89,6 @@
   scrollbar-width: none;
 }
 
-/* Estilos limpios de impresión para PDF del storyboard */
 @media print {
   .no-print,
   .paper-grain {
@@ -79,6 +98,7 @@
   body,
   html {
     background: #FAF3E8 !important;
+    font-size: 100% !important;
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
   }

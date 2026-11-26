@@ -1,10 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 import { STORYBOARD_SCENES, type StoryboardScene } from '../data/storyboard';
+import { soundscape } from '../utils/soundscape';
 import AudioWave from './AudioWave';
+import TiltPlate from './TiltPlate';
 
-type ViewMode = 'editorial' | 'carousel' | 'technical';
+gsap.registerPlugin(ScrollTrigger, useGSAP);
+
+type ViewMode = 'editorial' | 'documentary' | 'carousel' | 'technical';
 
 interface StoryboardExperienceProps {
   baseUrl: string;
@@ -12,27 +20,27 @@ interface StoryboardExperienceProps {
 
 const ACCENT_STYLES: Record<
   StoryboardScene['accent'],
-  { pill: string; bar: string; cardTint: string }
+  { pill: string; cardTint: string; dot: string }
 > = {
   peach: {
     pill: 'bg-peach-pale text-ink border-peach',
-    bar: 'bg-terracotta',
-    cardTint: 'from-peach-pale/70 to-cream-soft',
+    cardTint: 'from-peach-pale/75 to-cream-soft',
+    dot: 'bg-terracotta',
   },
   rose: {
     pill: 'bg-rose-pale text-ink border-rose',
-    bar: 'bg-rose',
-    cardTint: 'from-rose-pale/65 to-cream-soft',
+    cardTint: 'from-rose-pale/70 to-cream-soft',
+    dot: 'bg-rose',
   },
   olive: {
     pill: 'bg-olive-pale text-forest border-olive/40',
-    bar: 'bg-olive',
-    cardTint: 'from-olive-pale/65 to-cream-soft',
+    cardTint: 'from-olive-pale/70 to-cream-soft',
+    dot: 'bg-olive',
   },
   forest: {
     pill: 'bg-forest/10 text-forest border-forest/25',
-    bar: 'bg-forest',
-    cardTint: 'from-olive-pale/45 to-cream-soft',
+    cardTint: 'from-olive-pale/50 to-cream-soft',
+    dot: 'bg-forest',
   },
 };
 
@@ -40,13 +48,21 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const [viewMode, setViewMode] = useState<ViewMode>('editorial');
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
   const [openTechMap, setOpenTechMap] = useState<Record<number, boolean>>({});
-  const [lightboxScene, setLightboxScene] = useState<StoryboardScene | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // Estado de síntesis de voz en español de México
+  // Controles sensoriales y de accesibilidad UX
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [isPlayingAll, setIsPlayingAll] = useState(false);
+  const [ambientOn, setAmbientOn] = useState(false);
+  const [comfortReading, setComfortReading] = useState(false);
 
-  // Progreso de lectura superior suave
+  // Estado del Modo Documental Guiado
+  const [docPlaying, setDocPlaying] = useState(true);
+  const [docProgress, setDocProgress] = useState(0);
+
+  const editorialListRef = useRef<HTMLDivElement>(null);
+
+  // Hilo superior de progreso global
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 120,
@@ -54,7 +70,83 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     restDelta: 0.001,
   });
 
-  // Embla Carousel para el modo táctil inmersivo
+  // Inicializar preferencia de lectura amplia guardada
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('uiep-comfort-reading');
+      if (saved === 'true') {
+        setComfortReading(true);
+        document.documentElement.classList.add('comfort-reading');
+      }
+    } catch {
+      // Ignorar modo privado sin localStorage
+    }
+  }, []);
+
+  const toggleComfortReading = () => {
+    setComfortReading((prev) => {
+      const next = !prev;
+      document.documentElement.classList.toggle('comfort-reading', next);
+      try {
+        localStorage.setItem('uiep-comfort-reading', String(next));
+      } catch {
+        // Ignorar
+      }
+      return next;
+    });
+  };
+
+  const handleToggleAmbient = () => {
+    const active = soundscape.toggleAmbient();
+    setAmbientOn(active);
+    if (active) soundscape.playHarmonicNote(activeSceneIndex);
+  };
+
+  // GSAP ScrollTrigger: parallax interno en acuarelas e hilo conductor vivo
+  useGSAP(
+    () => {
+      if (viewMode !== 'editorial' && viewMode !== 'technical') return;
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) return;
+
+      const images = gsap.utils.toArray<HTMLElement>('.gsap-parallax-img');
+      images.forEach((img) => {
+        gsap.fromTo(
+          img,
+          { scale: 1.07, yPercent: -3.5 },
+          {
+            scale: 1.0,
+            yPercent: 3.5,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: img.parentElement,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            },
+          }
+        );
+      });
+
+      gsap.fromTo(
+        '.gsap-spine-progress',
+        { scaleY: 0 },
+        {
+          scaleY: 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: editorialListRef.current,
+            start: 'top 35%',
+            end: 'bottom 75%',
+            scrub: 0.4,
+          },
+        }
+      );
+    },
+    { dependencies: [viewMode], scope: editorialListRef }
+  );
+
+  // Embla Carousel para el modo táctil
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
     align: 'center',
@@ -63,8 +155,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
   const onEmblaSelect = useCallback(() => {
     if (!emblaApi) return;
-    setActiveSceneIndex(emblaApi.selectedScrollSnap());
-  }, [emblaApi]);
+    const snap = emblaApi.selectedScrollSnap();
+    setActiveSceneIndex(snap);
+    if (ambientOn) soundscape.playHarmonicNote(snap);
+  }, [emblaApi, ambientOn]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -77,9 +171,29 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     };
   }, [emblaApi, onEmblaSelect]);
 
-  // Sincroniza el indicador activo mientras se hace scroll en modo editorial/técnico
+  // Escuchar eventos personalizados desde el Mapa Territorial (ir a escena)
   useEffect(() => {
-    if (viewMode === 'carousel' || !('IntersectionObserver' in window)) return;
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ sceneNumber: number }>;
+      const idx = (custom.detail?.sceneNumber ?? 1) - 1;
+      if (idx >= 0 && idx < STORYBOARD_SCENES.length) {
+        if (viewMode === 'carousel' || viewMode === 'documentary') {
+          setActiveSceneIndex(idx);
+          emblaApi?.scrollTo(idx);
+          document.getElementById('relato-interactivo')?.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          document.getElementById(`escena-${idx + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    };
+    window.addEventListener('uiep:goto-scene', handler);
+    return () => window.removeEventListener('uiep:goto-scene', handler);
+  }, [viewMode, emblaApi]);
+
+  // Observador de escena activa al hacer scroll
+  useEffect(() => {
+    if (viewMode === 'carousel' || viewMode === 'documentary' || !('IntersectionObserver' in window))
+      return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -97,29 +211,46 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     return () => observer.disconnect();
   }, [viewMode]);
 
-  // Atajos de teclado para lightbox y carrusel
+  // Atajos de teclado
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && lightboxScene) {
-        setLightboxScene(null);
+      if (lightboxIndex !== null) {
+        if (e.key === 'Escape') setLightboxIndex(null);
+        if (e.key === 'ArrowRight')
+          setLightboxIndex((prev) =>
+            prev !== null ? Math.min(STORYBOARD_SCENES.length - 1, prev + 1) : null
+          );
+        if (e.key === 'ArrowLeft')
+          setLightboxIndex((prev) => (prev !== null ? Math.max(0, prev - 1) : null));
         return;
       }
-      if (viewMode === 'carousel' && emblaApi && !lightboxScene) {
+      if (viewMode === 'carousel' && emblaApi) {
         if (e.key === 'ArrowRight') emblaApi.scrollNext();
         if (e.key === 'ArrowLeft') emblaApi.scrollPrev();
+      }
+      if (viewMode === 'documentary') {
+        if (e.key === 'ArrowRight')
+          setActiveSceneIndex((p) => Math.min(STORYBOARD_SCENES.length - 1, p + 1));
+        if (e.key === 'ArrowLeft') setActiveSceneIndex((p) => Math.max(0, p - 1));
+        if (e.key === ' ') {
+          e.preventDefault();
+          setDocPlaying((p) => !p);
+        }
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [lightboxScene, viewMode, emblaApi]);
+  }, [lightboxIndex, viewMode, emblaApi]);
 
-  // Limpiar voz al desmontar
+  // Limpieza al desmontar
   useEffect(() => {
     return () => {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      soundscape.stopAmbient();
     };
   }, []);
 
+  // Síntesis de voz en español de México
   const getSpanishVoice = () => {
     if (!('speechSynthesis' in window)) return null;
     const voices = window.speechSynthesis.getVoices();
@@ -187,17 +318,54 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     const voice = getSpanishVoice();
     if (voice) utterance.voice = voice;
 
-    utterance.onend = () => {
-      playSequenceFrom(index + 1);
-    };
+    utterance.onend = () => playSequenceFrom(index + 1);
     utterance.onerror = () => stopSpeech();
     window.speechSynthesis.speak(utterance);
   };
 
+  // Temporizador y narración automática del Modo Documental
+  useEffect(() => {
+    if (viewMode !== 'documentary') {
+      setDocProgress(0);
+      return;
+    }
+    if (!docPlaying) return;
+
+    const DURATION_MS = 9500;
+    const INTERVAL_MS = 60;
+    let elapsed = 0;
+    setDocProgress(0);
+
+    if (ambientOn) soundscape.playHarmonicNote(activeSceneIndex);
+
+    const timer = setInterval(() => {
+      elapsed += INTERVAL_MS;
+      const pct = Math.min(100, (elapsed / DURATION_MS) * 100);
+      setDocProgress(pct);
+
+      if (elapsed >= DURATION_MS) {
+        clearInterval(timer);
+        if (activeSceneIndex < STORYBOARD_SCENES.length - 1) {
+          setActiveSceneIndex((prev) => prev + 1);
+        } else {
+          setDocPlaying(false);
+        }
+      }
+    }, INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [viewMode, activeSceneIndex, docPlaying, ambientOn]);
+
   const jumpToScene = (index: number) => {
     setActiveSceneIndex(index);
+    if (ambientOn) soundscape.playHarmonicNote(index);
+
     if (viewMode === 'carousel' && emblaApi) {
       emblaApi.scrollTo(index);
+      return;
+    }
+    if (viewMode === 'documentary') {
+      setDocProgress(0);
       return;
     }
     const target = document.getElementById(`escena-${index + 1}`);
@@ -206,33 +374,45 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     }
   };
 
+  const handleModeSwitch = (mode: ViewMode) => {
+    stopSpeech();
+    setViewMode(mode);
+    if (mode === 'documentary') {
+      setDocPlaying(true);
+      setDocProgress(0);
+    }
+    if (ambientOn) soundscape.playHarmonicNote(activeSceneIndex);
+  };
+
   const toggleTechSpec = (num: number) => {
     setOpenTechMap((prev) => ({ ...prev, [num]: !prev[num] }));
   };
 
-  const currentSlideScene = STORYBOARD_SCENES[activeSceneIndex] ?? STORYBOARD_SCENES[0];
+  const currentScene = STORYBOARD_SCENES[activeSceneIndex] ?? STORYBOARD_SCENES[0];
+  const lightboxScene = lightboxIndex !== null ? STORYBOARD_SCENES[lightboxIndex] : null;
 
   return (
-    <section id="relato-interactivo" className="relative pb-16">
-      {/* Hilo superior de progreso de lectura */}
+    <section id="relato-interactivo" className="relative pb-20">
+      {/* Hilo superior global de lectura */}
       <motion.div
         style={{ scaleX }}
         className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-forest via-olive to-terracotta origin-left z-50 no-print"
       />
 
-      {/* Barra flotante moderna con píldoras animadas (layoutId) */}
+      {/* DOCK FLOTANTE DE EXPERIENCIA Y ACCESIBILIDAD */}
       <div className="sticky top-3 z-40 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 no-print">
-        <div className="rounded-3xl bg-cream-soft/90 backdrop-blur-xl border border-earth/20 shadow-[0_10px_35px_rgba(60,40,20,0.09)] p-2.5 sm:px-4 sm:py-3 space-y-2.5">
+        <div className="rounded-[26px] bg-cream-soft/92 backdrop-blur-xl border border-earth/20 shadow-[0_14px_40px_rgba(55,35,18,0.1)] p-2.5 sm:px-4 sm:py-3 space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
-            {/* Selector de modo con transición compartida Motion */}
+            {/* 4 Modos de Experiencia con píldora compartida Motion */}
             <div
-              className="inline-flex flex-wrap items-center rounded-full bg-cream-deep/75 p-1 border border-earth/15"
+              className="inline-flex flex-wrap items-center rounded-full bg-cream-deep/70 p-1 border border-earth/15"
               role="tablist"
               aria-label="Modo de experiencia"
             >
               {(
                 [
-                  { id: 'editorial', label: 'Relato Visual' },
+                  { id: 'editorial', label: 'Recorrido Inmersivo' },
+                  { id: 'documentary', label: 'Modo Documental' },
                   { id: 'carousel', label: 'Carrusel Táctil' },
                   { id: 'technical', label: 'Guion Completo' },
                 ] as const
@@ -244,8 +424,8 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    onClick={() => setViewMode(tab.id)}
-                    className={`relative px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-full transition-colors cursor-pointer ${
+                    onClick={() => handleModeSwitch(tab.id)}
+                    className={`relative px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
                       active ? 'text-cream' : 'text-ink-soft hover:text-ink'
                     }`}
                   >
@@ -262,32 +442,64 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               })}
             </div>
 
-            {/* Acciones tipográficas limpias con ecualizador de voz */}
-            <div className="flex items-center gap-2">
+            {/* Controles sensoriales y de confort visual (cero iconos) */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={toggleSpeakAll}
-                className={`inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
+                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all cursor-pointer ${
                   isPlayingAll
-                    ? 'bg-terracotta text-cream border-terracotta shadow-xs'
+                    ? 'bg-terracotta text-cream border-terracotta'
                     : 'bg-cream text-ink border-earth/25 hover:border-forest/50'
                 }`}
               >
                 <AudioWave active={isPlayingAll} light={isPlayingAll} />
-                <span>{isPlayingAll ? 'Detener narración' : 'Escuchar historia'}</span>
+                <span>{isPlayingAll ? 'Detener voz' : 'Narrar historia'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleToggleAmbient}
+                aria-pressed={ambientOn}
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors cursor-pointer ${
+                  ambientOn
+                    ? 'bg-olive-pale text-forest border-olive font-semibold'
+                    : 'bg-cream text-ink-soft border-earth/20 hover:text-ink'
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    ambientOn ? 'bg-forest animate-ping' : 'bg-earth/45'
+                  }`}
+                  aria-hidden="true"
+                />
+                <span>Ambiente sonoro</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleComfortReading}
+                aria-pressed={comfortReading}
+                className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium border transition-colors cursor-pointer ${
+                  comfortReading
+                    ? 'bg-peach/70 text-ink border-earth/45 font-semibold'
+                    : 'bg-cream text-ink-soft border-earth/20 hover:text-ink'
+                }`}
+              >
+                {comfortReading ? 'Texto estándar' : 'Lectura amplia'}
               </button>
 
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="hidden sm:inline-flex items-center rounded-full bg-cream px-3.5 py-1.5 text-xs sm:text-sm font-medium text-ink-soft border border-earth/20 hover:text-ink hover:border-earth/45 transition-colors cursor-pointer"
+                className="hidden lg:inline-flex items-center rounded-full bg-cream px-3 py-1.5 text-xs font-medium text-ink-soft border border-earth/20 hover:text-ink transition-colors cursor-pointer"
               >
                 Guardar PDF
               </button>
             </div>
           </div>
 
-          {/* Tira numérica 01 — 08 */}
+          {/* Tira rápida de escenas 01 — 08 */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
             {STORYBOARD_SCENES.map((scene, idx) => {
               const isCurrent = activeSceneIndex === idx;
@@ -320,12 +532,160 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
         </div>
       </div>
 
-      {/* CONTENEDOR PRINCIPAL DE VISTAS */}
+      {/* ====================================================================
+         CUERPO SEGÚN EL MODO SELECCIONADO
+         ==================================================================== */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {viewMode === 'carousel' ? (
-          /* ================================================================
-             VISTA 2: CARRUSEL TÁCTIL INMERSIVO (Embla Carousel + AnimatePresence)
-             ================================================================ */
+        {viewMode === 'documentary' ? (
+          /* ----------------------------------------------------------------
+             MODO 2: TEATRO DOCUMENTAL GUIADO (Ken Burns + Barras tipo Story)
+             ---------------------------------------------------------------- */
+          <motion.div
+            key="documentary-mode"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.45 }}
+            className="space-y-5"
+          >
+            <div className="relative rounded-[30px] overflow-hidden bg-ink border border-earth/30 shadow-[0_26px_70px_rgba(28,22,18,0.28)]">
+              {/* Barras superiores segmentadas 01..08 */}
+              <div className="absolute top-0 left-0 right-0 z-20 p-4 sm:p-5 bg-gradient-to-b from-ink/70 to-transparent">
+                <div className="grid grid-cols-8 gap-1.5 mb-3">
+                  {STORYBOARD_SCENES.map((s, i) => {
+                    const fill =
+                      i < activeSceneIndex ? 100 : i === activeSceneIndex ? docProgress : 0;
+                    return (
+                      <button
+                        key={s.number}
+                        type="button"
+                        onClick={() => {
+                          setActiveSceneIndex(i);
+                          setDocProgress(0);
+                        }}
+                        aria-label={`Saltar a escena ${s.number}`}
+                        className="h-1.5 rounded-full bg-cream/25 overflow-hidden cursor-pointer"
+                      >
+                        <div
+                          className="h-full bg-peach transition-[width] duration-75 ease-linear"
+                          style={{ width: `${fill}%` }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 text-cream">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-xs font-semibold tracking-wider text-peach">
+                      ESCENA {currentScene.numeral} / 08
+                    </span>
+                    <span className="text-xs sm:text-sm font-medium text-cream/90">
+                      {currentScene.phase}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => speakSingleScene(activeSceneIndex)}
+                      className="rounded-full bg-cream/15 backdrop-blur-md border border-cream/25 px-3.5 py-1 text-xs font-semibold text-cream hover:bg-cream/25 transition-colors cursor-pointer"
+                    >
+                      {speakingIndex === activeSceneIndex ? 'Silenciar voz' : 'Escuchar voz'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDocPlaying((p) => !p)}
+                      className="rounded-full bg-peach text-ink px-4 py-1 text-xs font-semibold hover:bg-peach-pale transition-colors cursor-pointer"
+                    >
+                      {docPlaying ? 'Pausar avance' : 'Reanudar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Imagen con transición cruzada + efecto Ken Burns */}
+              <div className="relative aspect-video w-full overflow-hidden bg-ink">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={currentScene.number}
+                    src={`${baseUrl}${currentScene.imageJpg}`}
+                    alt={currentScene.imageAlt}
+                    initial={{ opacity: 0.25 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0.25 }}
+                    transition={{ duration: 0.65 }}
+                    className={`w-full h-full object-cover ${
+                      docPlaying ? 'ken-burns-active' : ''
+                    }`}
+                  />
+                </AnimatePresence>
+
+                {/* Subtítulo cinematográfico superpuesto */}
+                <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-ink/92 via-ink/55 to-transparent px-5 pb-5 pt-16 sm:px-10 sm:pb-8">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentScene.number}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.35 }}
+                      className="max-w-3xl space-y-2"
+                    >
+                      <h2 className="font-serif text-xl sm:text-3xl font-medium text-cream leading-snug">
+                        {currentScene.onScreenLines[0]}{' '}
+                        <span className="text-peach">{currentScene.onScreenLines[1]}</span>
+                      </h2>
+                      <p className="text-xs sm:text-base text-cream/85 leading-relaxed">
+                        <strong className="font-mono uppercase tracking-wider text-[11px] text-olive-pale mr-2">
+                          {currentScene.speaker}:
+                        </strong>
+                        {currentScene.dialogue}
+                      </p>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+
+            {/* Navegación inferior del documental */}
+            <div className="flex items-center justify-between gap-4">
+              <button
+                type="button"
+                disabled={activeSceneIndex === 0}
+                onClick={() => {
+                  setActiveSceneIndex((p) => Math.max(0, p - 1));
+                  setDocProgress(0);
+                }}
+                className="rounded-full bg-cream-soft border border-earth/25 px-5 py-2.5 text-xs sm:text-sm font-semibold text-ink disabled:opacity-35 hover:bg-peach-pale transition-colors cursor-pointer"
+              >
+                Escena anterior
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(activeSceneIndex)}
+                className="text-xs sm:text-sm font-semibold text-forest underline underline-offset-4 cursor-pointer"
+              >
+                Inspeccionar lámina con zoom
+              </button>
+
+              <button
+                type="button"
+                disabled={activeSceneIndex === STORYBOARD_SCENES.length - 1}
+                onClick={() => {
+                  setActiveSceneIndex((p) => Math.min(STORYBOARD_SCENES.length - 1, p + 1));
+                  setDocProgress(0);
+                }}
+                className="rounded-full bg-forest px-5 py-2.5 text-xs sm:text-sm font-semibold text-cream disabled:opacity-35 hover:bg-forest-dark transition-colors cursor-pointer"
+              >
+                Siguiente escena
+              </button>
+            </div>
+          </motion.div>
+        ) : viewMode === 'carousel' ? (
+          /* ----------------------------------------------------------------
+             MODO 3: CARRUSEL TÁCTIL (Embla Carousel + AnimatePresence)
+             ---------------------------------------------------------------- */
           <motion.div
             key="carousel-view"
             initial={{ opacity: 0, y: 16 }}
@@ -333,15 +693,15 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             transition={{ duration: 0.45 }}
             className="space-y-6"
           >
-            <div className="overflow-hidden rounded-[28px] border border-earth/25 bg-cream-soft shadow-[0_20px_50px_rgba(70,45,25,0.1)]" ref={emblaRef}>
+            <div
+              className="overflow-hidden rounded-[28px] border border-earth/25 bg-cream-soft shadow-[0_20px_50px_rgba(70,45,25,0.1)]"
+              ref={emblaRef}
+            >
               <div className="flex touch-pan-y">
-                {STORYBOARD_SCENES.map((scene) => (
-                  <div
-                    key={scene.number}
-                    className="flex-[0_0_100%] min-w-0 relative select-none"
-                  >
+                {STORYBOARD_SCENES.map((scene, idx) => (
+                  <div key={scene.number} className="flex-[0_0_100%] min-w-0 relative select-none">
                     <div
-                      onClick={() => setLightboxScene(scene)}
+                      onClick={() => setLightboxIndex(idx)}
                       className="relative cursor-zoom-in overflow-hidden bg-cream-deep"
                     >
                       <picture>
@@ -360,7 +720,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                         </span>
                       </div>
                       <div className="absolute bottom-3 right-4 rounded-full bg-ink/70 backdrop-blur-xs px-3 py-1 text-[11px] font-medium text-cream">
-                        Toca la lámina para ampliar
+                        Toca para acercar con zoom
                       </div>
                     </div>
                   </div>
@@ -368,7 +728,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               </div>
             </div>
 
-            {/* Controles táctiles y detalle animado de la escena activa */}
             <div className="flex items-center justify-between gap-4">
               <button
                 type="button"
@@ -380,7 +739,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               </button>
 
               <span className="font-mono text-xs sm:text-sm text-ink-muted">
-                Desliza con el dedo · {currentSlideScene.numeral} de 08
+                Desliza horizontalmente · {currentScene.numeral} de 08
               </span>
 
               <button
@@ -395,7 +754,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
             <AnimatePresence mode="wait">
               <motion.div
-                key={currentSlideScene.number}
+                key={currentScene.number}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
@@ -406,13 +765,13 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                   <div className="space-y-1">
                     <span
                       className={`inline-block rounded-full border px-3 py-0.5 text-xs font-semibold ${
-                        ACCENT_STYLES[currentSlideScene.accent].pill
+                        ACCENT_STYLES[currentScene.accent].pill
                       }`}
                     >
-                      {currentSlideScene.phase}
+                      {currentScene.phase}
                     </span>
                     <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-ink">
-                      {currentSlideScene.title}
+                      {currentScene.title}
                     </h2>
                   </div>
 
@@ -434,18 +793,18 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       Texto en pantalla
                     </p>
                     <p className="font-serif text-lg sm:text-xl font-medium text-ink leading-snug">
-                      {currentSlideScene.onScreenLines[0]}
+                      {currentScene.onScreenLines[0]}
                       <br />
-                      {currentSlideScene.onScreenLines[1]}
+                      {currentScene.onScreenLines[1]}
                     </p>
                   </div>
 
                   <div className="rounded-2xl bg-olive-pale/45 p-5 border border-olive/30">
                     <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest mb-1.5">
-                      {currentSlideScene.speaker}
+                      {currentScene.speaker}
                     </p>
                     <p className="text-sm sm:text-base text-ink-soft leading-relaxed">
-                      {currentSlideScene.dialogue}
+                      {currentScene.dialogue}
                     </p>
                   </div>
                 </div>
@@ -453,212 +812,208 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             </AnimatePresence>
           </motion.div>
         ) : (
-          /* ================================================================
-             VISTA 1 & 3: RELATO VISUAL SCROLLYTELLING / GUION TÉCNICO COMPLETO
-             ================================================================ */
-          <div className="space-y-12 md:space-y-20">
-            {STORYBOARD_SCENES.map((scene, index) => {
-              const isReversed = index % 2 === 1 && viewMode === 'editorial';
-              const isTechExpanded = viewMode === 'technical' || Boolean(openTechMap[scene.number]);
-              const accent = ACCENT_STYLES[scene.accent];
-              const isSpeakingThis = speakingIndex === index;
+          /* ----------------------------------------------------------------
+             MODO 1 & 4: RECORRIDO INMERSIVO CON HILO CONDUCTOR GSAP / GUION COMPLETO
+             ---------------------------------------------------------------- */
+          <div ref={editorialListRef} className="relative">
+            {/* Espina dorsal topográfica animada con GSAP ScrollTrigger */}
+            <div
+              className="hidden lg:block absolute left-1/2 top-8 bottom-8 w-px bg-earth/15 -translate-x-1/2 pointer-events-none no-print"
+              aria-hidden="true"
+            >
+              <div className="gsap-spine-progress w-full h-full bg-gradient-to-b from-forest via-olive to-terracotta origin-top" />
+            </div>
 
-              return (
-                <div key={scene.number} className="relative print-scene-break">
-                  <motion.article
-                    id={`escena-${scene.number}`}
-                    data-scene-card
-                    data-scene-index={index}
-                    initial={{ opacity: 0, y: 32 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-80px' }}
-                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                    className="scroll-mt-36 rounded-[30px] bg-cream-soft border border-earth/20 shadow-[0_14px_40px_rgba(70,45,25,0.06)] overflow-hidden p-4 sm:p-6 lg:p-8"
-                  >
-                    <div
-                      className={`grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center`}
+            <div className="space-y-12 lg:space-y-20 relative z-10">
+              {STORYBOARD_SCENES.map((scene, index) => {
+                const isReversed = index % 2 === 1 && viewMode === 'editorial';
+                const isTechExpanded =
+                  viewMode === 'technical' || Boolean(openTechMap[scene.number]);
+                const accent = ACCENT_STYLES[scene.accent];
+                const isSpeakingThis = speakingIndex === index;
+
+                return (
+                  <div key={scene.number} className="relative print-scene-break">
+                    <motion.article
+                      id={`escena-${scene.number}`}
+                      data-scene-card
+                      data-scene-index={index}
+                      initial={{ opacity: 0, y: 34 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: '-75px' }}
+                      transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+                      className="scroll-mt-36 rounded-[30px] bg-cream-soft/95 backdrop-blur-xs border border-earth/20 shadow-[0_16px_45px_rgba(70,45,25,0.07)] overflow-hidden p-4 sm:p-6 lg:p-8"
                     >
-                      {/* Columna de lámina en acuarela */}
-                      <div
-                        className={`lg:col-span-7 ${
-                          isReversed ? 'lg:order-2' : 'lg:order-1'
-                        }`}
-                      >
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+                        {/* Lámina con parallax GSAP + inclinación 3D TiltPlate */}
                         <div
-                          onClick={() => setLightboxScene(scene)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setLightboxScene(scene);
-                            }
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`Ampliar lámina de la escena ${scene.number}: ${scene.title}`}
-                          className="group relative overflow-hidden rounded-[22px] border border-earth/20 bg-cream-deep cursor-zoom-in"
+                          className={`lg:col-span-7 ${
+                            isReversed ? 'lg:order-2' : 'lg:order-1'
+                          }`}
                         >
-                          <picture>
-                            <source srcSet={`${baseUrl}${scene.imageWebp}`} type="image/webp" />
-                            <img
-                              src={`${baseUrl}${scene.imageJpg}`}
-                              alt={scene.imageAlt}
-                              loading={index === 0 ? 'eager' : 'lazy'}
-                              width={1360}
-                              height={759}
-                              className="w-full h-auto aspect-video object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                            />
-                          </picture>
-                          <div className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4 no-print">
-                            <span className="rounded-full bg-cream-soft/95 px-3.5 py-1 text-xs font-semibold text-ink shadow-sm">
-                              Ampliar lámina
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Columna narrativa y editorial */}
-                      <div
-                        className={`lg:col-span-5 space-y-5 ${
-                          isReversed ? 'lg:order-1' : 'lg:order-2'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <span className="font-serif text-3xl sm:text-4xl font-semibold text-earth/45 leading-none select-none">
-                              {scene.numeral}
-                            </span>
-                            <span
-                              className={`inline-block rounded-full border px-3 py-0.5 text-xs font-semibold ${accent.pill}`}
-                            >
-                              {scene.phase}
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => speakSingleScene(index)}
-                            className={`no-print inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-colors cursor-pointer ${
-                              isSpeakingThis
-                                ? 'bg-forest text-cream border-forest'
-                                : 'bg-cream text-forest border-olive/35 hover:bg-olive-pale/70'
-                            }`}
+                          <TiltPlate
+                            maxTilt={4}
+                            onClick={() => setLightboxIndex(index)}
+                            ariaLabel={`Inspeccionar con zoom la lámina de la escena ${scene.number}: ${scene.title}`}
+                            className="group overflow-hidden rounded-[22px] border border-earth/20 bg-cream-deep cursor-zoom-in"
                           >
-                            <AudioWave active={isSpeakingThis} light={isSpeakingThis} />
-                            <span>{isSpeakingThis ? 'Detener' : 'Escuchar'}</span>
-                          </button>
+                            <div className="overflow-hidden aspect-video">
+                              <picture>
+                                <source
+                                  srcSet={`${baseUrl}${scene.imageWebp}`}
+                                  type="image/webp"
+                                />
+                                <img
+                                  src={`${baseUrl}${scene.imageJpg}`}
+                                  alt={scene.imageAlt}
+                                  loading={index === 0 ? 'eager' : 'lazy'}
+                                  width={1360}
+                                  height={759}
+                                  className="gsap-parallax-img w-full h-full object-cover will-change-transform"
+                                />
+                              </picture>
+                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-4 no-print">
+                              <span className="font-mono text-[11px] text-cream/90 uppercase tracking-wider">
+                                Escena {scene.numeral}
+                              </span>
+                              <span className="rounded-full bg-cream-soft/95 px-3.5 py-1 text-xs font-semibold text-ink shadow-sm">
+                                Inspeccionar con zoom
+                              </span>
+                            </div>
+                          </TiltPlate>
                         </div>
 
-                        <h2 className="font-serif text-2xl sm:text-[1.75rem] font-semibold leading-tight text-ink">
-                          {scene.title}
-                        </h2>
-
-                        {/* Texto en pantalla (máximo 2 líneas) */}
+                        {/* Contenido narrativo */}
                         <div
-                          className={`rounded-2xl bg-gradient-to-br ${accent.cardTint} border border-earth/20 p-4 sm:p-5`}
+                          className={`lg:col-span-5 space-y-5 ${
+                            isReversed ? 'lg:order-1' : 'lg:order-2'
+                          }`}
                         >
-                          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth mb-1.5">
-                            Texto en pantalla
-                          </p>
-                          <p className="font-serif text-base sm:text-lg font-medium text-ink leading-snug">
-                            {scene.onScreenLines[0]}
-                            <br />
-                            {scene.onScreenLines[1]}
-                          </p>
-                        </div>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <span className="font-serif text-3xl sm:text-4xl font-semibold text-earth/45 leading-none select-none">
+                                {scene.numeral}
+                              </span>
+                              <span
+                                className={`inline-block rounded-full border px-3 py-0.5 text-xs font-semibold ${accent.pill}`}
+                              >
+                                {scene.phase}
+                              </span>
+                            </div>
 
-                        {/* Diálogo o narración cercana */}
-                        <div className="relative pl-4 border-l-2 border-olive space-y-1">
-                          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-forest font-medium">
-                            {scene.speaker}
-                          </p>
-                          <p className="text-sm sm:text-[15.5px] text-ink-soft leading-relaxed">
-                            {scene.dialogue}
-                          </p>
-                        </div>
-
-                        {/* Botón acordeón de ficha técnica (solo en modo Relato Visual) */}
-                        {viewMode === 'editorial' && (
-                          <div className="pt-1 no-print">
                             <button
                               type="button"
-                              onClick={() => toggleTechSpec(scene.number)}
-                              aria-expanded={isTechExpanded}
-                              className="text-xs font-semibold text-earth hover:text-forest transition-colors underline decoration-earth/35 underline-offset-4 cursor-pointer"
+                              onClick={() => speakSingleScene(index)}
+                              className={`no-print inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-colors cursor-pointer ${
+                                isSpeakingThis
+                                  ? 'bg-forest text-cream border-forest'
+                                  : 'bg-cream text-forest border-olive/35 hover:bg-olive-pale/70'
+                              }`}
                             >
-                              {isTechExpanded
-                                ? 'Ocultar notas de encuadre y transición'
-                                : 'Ver descripción visual y transición de escena'}
+                              <AudioWave active={isSpeakingThis} light={isSpeakingThis} />
+                              <span>{isSpeakingThis ? 'Detener' : 'Escuchar'}</span>
                             </button>
                           </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Panel expandible con Descripción Visual Detallada + Nota de Transición */}
-                    <AnimatePresence initial={false}>
-                      {isTechExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                          className="overflow-hidden"
-                        >
-                          <div className="mt-6 pt-6 border-t border-earth/15 grid grid-cols-1 md:grid-cols-12 gap-5 text-sm">
-                            <div className="md:col-span-8 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
-                              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest font-medium">
-                                Descripción visual detallada (encuadre, personajes, entorno y emociones)
-                              </p>
-                              <p className="text-ink-soft leading-relaxed">
-                                {scene.visualDescription}
-                              </p>
-                            </div>
+                          <h2 className="font-serif text-2xl sm:text-[1.78rem] font-semibold leading-tight text-ink">
+                            {scene.title}
+                          </h2>
 
-                            <div className="md:col-span-4 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
-                              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth font-medium">
-                                Ritmo y transición visual
-                              </p>
-                              <p className="text-ink-soft leading-relaxed">
-                                {scene.transitionNote}
-                              </p>
-                            </div>
+                          <div
+                            className={`rounded-2xl bg-gradient-to-br ${accent.cardTint} border border-earth/20 p-4 sm:p-5`}
+                          >
+                            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth mb-1.5">
+                              Texto en pantalla
+                            </p>
+                            <p className="font-serif text-base sm:text-lg font-medium text-ink leading-snug">
+                              {scene.onScreenLines[0]}
+                              <br />
+                              {scene.onScreenLines[1]}
+                            </p>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.article>
 
-                  {/* Hilo editorial vertical entre escenas */}
-                  {index < STORYBOARD_SCENES.length - 1 && (
-                    <div
-                      className="hidden md:flex flex-col items-center justify-center py-3 no-print"
-                      aria-hidden="true"
-                    >
-                      <div className="w-px h-10 bg-gradient-to-b from-earth/35 to-olive/40" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                          <div className="relative pl-4 border-l-2 border-olive space-y-1">
+                            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-forest font-medium">
+                              {scene.speaker}
+                            </p>
+                            <p className="text-sm sm:text-[15.5px] text-ink-soft leading-relaxed">
+                              {scene.dialogue}
+                            </p>
+                          </div>
+
+                          {viewMode === 'editorial' && (
+                            <div className="pt-1 no-print">
+                              <button
+                                type="button"
+                                onClick={() => toggleTechSpec(scene.number)}
+                                aria-expanded={isTechExpanded}
+                                className="text-xs font-semibold text-earth hover:text-forest transition-colors underline decoration-earth/35 underline-offset-4 cursor-pointer"
+                              >
+                                {isTechExpanded
+                                  ? 'Ocultar ficha de dirección visual'
+                                  : 'Desplegar descripción visual y transición'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {isTechExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-6 pt-6 border-t border-earth/15 grid grid-cols-1 md:grid-cols-12 gap-5 text-sm">
+                              <div className="md:col-span-8 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
+                                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest font-medium">
+                                  Descripción visual detallada (encuadre, personajes, entorno y emociones)
+                                </p>
+                                <p className="text-ink-soft leading-relaxed">
+                                  {scene.visualDescription}
+                                </p>
+                              </div>
+
+                              <div className="md:col-span-4 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
+                                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth font-medium">
+                                  Ritmo y transición visual
+                                </p>
+                                <p className="text-ink-soft leading-relaxed">
+                                  {scene.transitionNote}
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.article>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
 
-      {/* ================================================================
-         VISOR LIGHTBOX DE GALERÍA CON FÍSICA SPRING
-         ================================================================ */}
+      {/* ====================================================================
+         INSPECTOR DE ALTA DEFINICIÓN CON PINCH-TO-ZOOM Y PANEO (react-zoom-pan-pinch)
+         ==================================================================== */}
       <AnimatePresence>
-        {lightboxScene && (
+        {lightboxScene && lightboxIndex !== null && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24 }}
-            onClick={() => setLightboxScene(null)}
-            className="fixed inset-0 z-50 bg-ink/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 no-print"
+            onClick={() => setLightboxIndex(null)}
+            className="fixed inset-0 z-50 bg-ink/88 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 no-print"
             role="dialog"
             aria-modal="true"
-            aria-label={`Lámina ampliada: Escena ${lightboxScene.number}`}
+            aria-label={`Inspector de lámina: Escena ${lightboxScene.number}`}
           >
             <motion.div
               initial={{ scale: 0.94, opacity: 0, y: 14 }}
@@ -666,39 +1021,102 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               exit={{ scale: 0.96, opacity: 0, y: 10 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
               onClick={(e) => e.stopPropagation()}
-              className="max-w-5xl w-full rounded-[26px] bg-cream-soft border border-earth/30 overflow-hidden shadow-2xl"
+              className="max-w-5xl w-full rounded-[28px] bg-cream-soft border border-earth/30 overflow-hidden shadow-2xl"
             >
-              <div className="flex items-center justify-between gap-4 px-5 py-3.5 border-b border-earth/15">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs font-semibold text-forest">
-                    ESCENA {lightboxScene.numeral}
-                  </span>
-                  <span className="text-sm font-semibold text-ink truncate">
-                    {lightboxScene.title}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setLightboxScene(null)}
-                  className="rounded-full bg-cream border border-earth/25 px-4 py-1 text-xs font-semibold text-ink hover:bg-peach-pale transition-colors cursor-pointer"
-                >
-                  Cerrar vista
-                </button>
-              </div>
+              <TransformWrapper
+                initialScale={1}
+                minScale={1}
+                maxScale={3.5}
+                centerOnInit
+                key={lightboxScene.number}
+              >
+                {({ zoomIn, zoomOut, resetTransform }) => (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-earth/15">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-mono text-xs font-semibold text-forest shrink-0">
+                          ESCENA {lightboxScene.numeral} / 08
+                        </span>
+                        <span className="text-xs sm:text-sm font-semibold text-ink truncate">
+                          {lightboxScene.title}
+                        </span>
+                      </div>
 
-              <div className="bg-cream-deep">
-                <img
-                  src={`${baseUrl}${lightboxScene.imageJpg}`}
-                  alt={lightboxScene.imageAlt}
-                  className="w-full max-h-[74vh] object-contain mx-auto"
-                />
-              </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => zoomOut()}
+                          className="rounded-full bg-cream border border-earth/20 px-3 py-1 text-xs font-semibold text-ink hover:bg-peach-pale cursor-pointer"
+                        >
+                          Alejar -
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => resetTransform()}
+                          className="rounded-full bg-cream border border-earth/20 px-3 py-1 text-xs font-mono text-ink-soft hover:text-ink cursor-pointer"
+                        >
+                          100%
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => zoomIn()}
+                          className="rounded-full bg-cream border border-earth/20 px-3 py-1 text-xs font-semibold text-ink hover:bg-peach-pale cursor-pointer"
+                        >
+                          Acercar +
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLightboxIndex(null)}
+                          className="rounded-full bg-forest px-4 py-1 text-xs font-semibold text-cream hover:bg-forest-dark ml-1 cursor-pointer"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
 
-              <div className="px-5 py-4 bg-cream-soft text-center">
-                <p className="font-serif text-base sm:text-lg text-ink">
-                  {lightboxScene.onScreenLines.join(' ')}
-                </p>
-              </div>
+                    <div className="bg-cream-deep cursor-grab active:cursor-grabbing overflow-hidden flex items-center justify-center">
+                      <TransformComponent
+                        wrapperStyle={{ width: '100%', maxHeight: '70vh' }}
+                        contentStyle={{ width: '100%' }}
+                      >
+                        <img
+                          src={`${baseUrl}${lightboxScene.imageJpg}`}
+                          alt={lightboxScene.imageAlt}
+                          className="w-full max-h-[70vh] object-contain mx-auto select-none"
+                        />
+                      </TransformComponent>
+                    </div>
+
+                    <div className="px-5 py-3.5 bg-cream-soft border-t border-earth/15 flex flex-wrap items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        disabled={lightboxIndex === 0}
+                        onClick={() => setLightboxIndex((i) => (i !== null ? Math.max(0, i - 1) : 0))}
+                        className="text-xs font-semibold text-ink disabled:opacity-35 hover:text-forest cursor-pointer"
+                      >
+                        Anterior lámina
+                      </button>
+
+                      <p className="font-serif text-sm sm:text-base text-ink text-center flex-1">
+                        {lightboxScene.onScreenLines.join(' ')}
+                      </p>
+
+                      <button
+                        type="button"
+                        disabled={lightboxIndex === STORYBOARD_SCENES.length - 1}
+                        onClick={() =>
+                          setLightboxIndex((i) =>
+                            i !== null ? Math.min(STORYBOARD_SCENES.length - 1, i + 1) : 0
+                          )
+                        }
+                        className="text-xs font-semibold text-ink disabled:opacity-35 hover:text-forest cursor-pointer"
+                      >
+                        Siguiente lámina
+                      </button>
+                    </div>
+                  </>
+                )}
+              </TransformWrapper>
             </motion.div>
           </motion.div>
         )}

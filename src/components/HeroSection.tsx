@@ -1,20 +1,71 @@
-import { motion } from 'motion/react';
+import { useRef } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import TiltPlate from './TiltPlate';
+
+gsap.registerPlugin(useGSAP);
 
 interface HeroSectionProps {
   baseUrl: string;
 }
 
+const KEY_METRICS = [
+  { figure: '08', label: 'Láminas narrativas' },
+  { figure: '04', label: 'Etapas participativas' },
+  { figure: '10', label: 'Estudiantes en brigada' },
+  { figure: '03', label: 'Pasos para sumarte' },
+];
+
 export default function HeroSection({ baseUrl }: HeroSectionProps) {
+  const containerRef = useRef<HTMLElement>(null);
+
+  useGSAP(
+    () => {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) return;
+
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      tl.from('.hero-topbar', { y: -18, opacity: 0, duration: 0.65 })
+        .from(
+          '.hero-mask-line',
+          {
+            yPercent: 110,
+            opacity: 0,
+            duration: 0.85,
+            stagger: 0.1,
+          },
+          '-=0.35'
+        )
+        .from(
+          '.hero-fade-up',
+          {
+            y: 20,
+            opacity: 0,
+            duration: 0.65,
+            stagger: 0.08,
+          },
+          '-=0.45'
+        )
+        .from(
+          '.hero-plate',
+          {
+            scale: 0.94,
+            y: 28,
+            opacity: 0,
+            duration: 0.9,
+          },
+          '-=0.65'
+        );
+    },
+    { scope: containerRef }
+  );
+
   return (
-    <header className="relative pt-6 pb-10 md:pt-10 md:pb-16 overflow-hidden">
+    <header ref={containerRef} className="relative pt-6 pb-10 md:pt-10 md:pb-16 overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Franja institucional superior */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-earth/20"
-        >
+        {/* Barra institucional superior */}
+        <div className="hero-topbar flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-earth/20">
           <div className="flex items-center gap-4">
             <div className="bg-cream-soft border border-earth/20 rounded-2xl px-3 py-2 shadow-xs">
               <img
@@ -41,76 +92,74 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
               San José Buenavista, Puebla
             </span>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Composición editorial asimétrica */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center pt-8 md:pt-12">
+        {/* Escenario principal asimétrico */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center pt-8 md:pt-12">
           <div className="lg:col-span-7 space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="inline-flex items-center gap-3 rounded-full bg-olive-pale/80 border border-olive/35 px-3.5 py-1"
-            >
-              <span className="font-mono text-xs font-medium text-forest">08 ESCENAS ILUSTRADAS</span>
-              <span className="h-3 w-px bg-olive/40" aria-hidden="true" />
-              <span className="text-xs font-medium text-forest">Guía abierta para vecinas y vecinos</span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.75, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-              className="font-serif text-4xl sm:text-5xl lg:text-[3.65rem] font-semibold leading-[1.04] tracking-[-0.02em] text-ink"
-            >
-              Diagnóstico Comunitario{' '}
-              <span className="italic font-medium text-forest block sm:inline">
-                Participativo
+            <div className="hero-fade-up inline-flex items-center gap-3 rounded-full bg-olive-pale/85 border border-olive/35 px-4 py-1">
+              <span className="font-mono text-[11px] font-semibold tracking-wider text-forest">
+                RELATO INTERACTIVO QR
               </span>
-            </motion.h1>
+              <span className="h-3 w-px bg-olive/40" aria-hidden="true" />
+              <span className="text-xs font-medium text-forest">
+                Abierto a todas las edades
+              </span>
+            </div>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.24, ease: [0.22, 1, 0.36, 1] }}
-              className="text-base sm:text-lg text-ink-soft leading-relaxed max-w-xl"
-            >
+            <h1 className="font-serif text-4xl sm:text-5xl lg:text-[3.85rem] font-semibold leading-[1.03] tracking-[-0.025em] text-ink">
+              <span className="block overflow-hidden pb-1">
+                <span className="hero-mask-line block">Diagnóstico Comunitario</span>
+              </span>
+              <span className="block overflow-hidden pb-1">
+                <span className="hero-mask-line block italic font-medium text-forest">
+                  Participativo
+                </span>
+              </span>
+            </h1>
+
+            <p className="hero-fade-up text-base sm:text-lg text-ink-soft leading-relaxed max-w-xl">
               Bienvenida y bienvenido. Escaneaste el código QR de nuestra lona comunitaria:
-              conoce paso a paso cómo vecinas, vecinos, comités, autoridades y estudiantes
-              trabajamos en equipo para construir soluciones reales y sustentables en{' '}
+              explora esta experiencia interactiva para conocer cómo vecinas, vecinos, comités,
+              autoridades y estudiantes trabajamos unidos por{' '}
               <strong className="font-semibold text-ink">San José Buenavista</strong>.
-            </motion.p>
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.32, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-wrap items-center gap-3 pt-1 no-print"
-            >
+            <div className="hero-fade-up flex flex-wrap items-center gap-3 pt-1 no-print">
               <a
                 href="#relato-interactivo"
-                className="inline-flex items-center justify-center rounded-full bg-forest px-6 py-3 text-sm font-semibold text-cream shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-forest-dark"
+                className="inline-flex items-center justify-center rounded-full bg-forest px-6 py-3 text-sm font-semibold text-cream shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-forest-dark"
               >
-                Comenzar recorrido visual
+                Iniciar recorrido inmersivo
               </a>
               <a
-                href="#como-participar"
-                className="inline-flex items-center justify-center rounded-full bg-peach-pale/80 border border-earth/30 px-5 py-3 text-sm font-semibold text-ink transition-colors duration-200 hover:bg-peach/60"
+                href="#mapa-territorial"
+                className="inline-flex items-center justify-center rounded-full bg-cream-soft border border-earth/25 px-5 py-3 text-sm font-semibold text-ink transition-colors duration-200 hover:bg-peach-pale/80"
               >
-                Cómo participar en 3 pasos
+                Explorar mapa de propuestas
               </a>
-            </motion.div>
+            </div>
+
+            {/* Franja editorial de telemetría comunitaria */}
+            <div className="hero-fade-up grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-earth/15">
+              {KEY_METRICS.map((item) => (
+                <div key={item.label} className="space-y-0.5">
+                  <p className="font-serif text-2xl sm:text-3xl font-semibold text-forest leading-none">
+                    {item.figure}
+                  </p>
+                  <p className="text-xs text-ink-muted font-medium">{item.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Marco editorial flotante con vista previa en acuarela */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.85, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-5"
-          >
-            <div className="relative rounded-[28px] bg-cream-soft p-3 sm:p-4 border border-earth/25 shadow-[0_20px_50px_rgba(92,64,43,0.12)]">
-              <div className="overflow-hidden rounded-[20px] border border-earth/15 bg-cream-deep">
+          {/* Lámina 3D interactiva con inclinación física */}
+          <div className="lg:col-span-5 hero-plate">
+            <TiltPlate
+              maxTilt={5.5}
+              className="rounded-[30px] bg-cream-soft p-3.5 sm:p-4 border border-earth/25 shadow-[0_24px_60px_rgba(92,64,43,0.14)]"
+            >
+              <div className="overflow-hidden rounded-[22px] border border-earth/15 bg-cream-deep">
                 <picture>
                   <source srcSet={`${baseUrl}assets/escena-01.webp`} type="image/webp" />
                   <img
@@ -122,21 +171,21 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
                   />
                 </picture>
               </div>
-              <div className="flex items-center justify-between gap-4 pt-3 px-1">
+              <div className="flex items-center justify-between gap-4 pt-3.5 px-1.5">
                 <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-earth">
-                    Cuaderno de vinculación
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth">
+                    Cuaderno de campo ilustrado
                   </p>
                   <p className="font-serif text-sm sm:text-base text-ink font-medium">
-                    La voz del pueblo guía cada propuesta
+                    La palabra de la comunidad marca el rumbo
                   </p>
                 </div>
-                <span className="font-mono text-xs px-2.5 py-1 rounded-full bg-peach/45 text-ink font-medium">
+                <span className="font-mono text-xs px-3 py-1 rounded-full bg-peach/50 text-ink font-semibold">
                   01 — 08
                 </span>
               </div>
-            </div>
-          </motion.div>
+            </TiltPlate>
+          </div>
         </div>
       </div>
     </header>
