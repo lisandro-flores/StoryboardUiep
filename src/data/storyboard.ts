@@ -30,7 +30,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     number: 1,
     numeral: '01',
-    phase: 'Llegada a territorio',
+    phase: 'Contexto · Llegada a territorio',
     accent: 'peach',
     title: 'Presencia en campo y vinculación con San José Buenavista',
     locationTag: 'Calles de San José Buenavista',
@@ -56,7 +56,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     number: 2,
     numeral: '02',
-    phase: 'Sentido del diagnóstico',
+    phase: 'Contexto · Diagnóstico participativo',
     accent: 'rose',
     title: '¿Qué se está haciendo? Un diagnóstico guiado por la comunidad',
     locationTag: 'Caminos y cruce de barranca',
@@ -82,7 +82,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     number: 3,
     numeral: '03',
-    phase: 'Etapa 01 · Planeación',
+    phase: 'Etapa 1 de 4 · Planeación',
     accent: 'forest',
     title: 'Coordinación formal con autoridades y Juzgado de Paz',
     locationTag: 'Oficina del Juzgado de Paz',
@@ -108,7 +108,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     number: 4,
     numeral: '04',
-    phase: 'Etapa 02 · Trabajo de campo',
+    phase: 'Etapa 2 de 4 · Trabajo de campo',
     accent: 'olive',
     title: 'Aplicación de encuestas, entrevistas y recorridos a pie',
     locationTag: 'Calles y brechas de la localidad',
@@ -134,14 +134,14 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
     dialogue:
       '«En cada calle escuchamos opiniones reales sobre el estado de la terracería, el suministro de agua y los puntos donde cuesta más caminar con seguridad.»',
     visualDescription:
-      'Dos registros fotográficos reales de campo: brigadistas con chalecos reflejantes y gafetes sosteniendo las cédulas impresas de encuesta en una calle de tierra, acompañados del recorrido a pie entre cactáceas columnares y vegetación local.',
+      'Dos fotografías reales de campo: brigadistas con chalecos reflejantes y gafetes sosteniendo las cédulas impresas de encuesta en una calle de tierra, acompañados del recorrido a pie entre cactáceas columnares y vegetación local.',
     transitionNote:
       'Todas las voces reunidas en las calles se llevan a la mesa colectiva del taller comunitario.',
   },
   {
     number: 5,
     numeral: '05',
-    phase: 'Etapa 03 · Mapa social',
+    phase: 'Etapa 2 de 4 · Trabajo de campo',
     accent: 'rose',
     title: 'Mesas participativas y dibujo conjunto del mapa social',
     locationTag: 'Techado comunitario',
@@ -151,7 +151,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
       'Vecinos, jóvenes estudiantes locales y brigadistas de la UIEP reunidos en mesa de madera bajo el techado dibujando el mapa social.',
     objectPosition: '50% 42%',
     whatLines: [
-      'Etapa 3 · Mapa social: Vecinos, jóvenes y brigada dibujamos juntos',
+      'Etapa 2 · Mapa social: Vecinos, jóvenes y brigada dibujamos juntos',
       'el croquis de la comunidad para ubicar las necesidades más urgentes.',
     ],
     howDescription:
@@ -167,7 +167,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     number: 6,
     numeral: '06',
-    phase: 'Etapa 03B · Análisis técnico',
+    phase: 'Etapa 3 de 4 · Análisis',
     accent: 'forest',
     title: 'Organización y análisis de las prioridades comunitarias',
     locationTag: 'Sesión de sistematización UIEP',
@@ -193,7 +193,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     number: 7,
     numeral: '07',
-    phase: 'Etapa 04 · Propuestas y participación',
+    phase: 'Etapa 4 de 4 · Propuestas',
     accent: 'peach',
     title: 'Elaboración de propuestas técnicas y cómo puedes sumarte',
     locationTag: 'Diseño de soluciones y jornada vecinal',
@@ -226,7 +226,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     number: 8,
     numeral: '08',
-    phase: 'Alianza comunitaria',
+    phase: 'Cierre · Impacto esperado',
     accent: 'olive',
     title: '¡Porque juntos construimos un mejor San José Buenavista!',
     locationTag: 'Frente al mural comunitario escolar',

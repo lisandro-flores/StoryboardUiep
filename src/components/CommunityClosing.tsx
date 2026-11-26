@@ -1,10 +1,49 @@
 import { motion } from 'motion/react';
 import { PARTICIPATION_STEPS, BRIGADE_TEAM } from '../data/storyboard';
 
+const COMMUNITY_IMPACTS = [
+  'Mayor participación ciudadana.',
+  'Mejora en la infraestructura y los servicios.',
+  'Propuestas viables para el desarrollo local.',
+  'Fortalecimiento del vínculo entre la universidad y San José Buenavista.',
+];
+
 export default function CommunityClosing() {
   return (
     <section id="como-participar" className="pb-16 pt-2 scroll-mt-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <article className="rounded-[24px] border border-earth/20 bg-cream-soft p-5 sm:p-6 shadow-[0_10px_30px_rgba(70,45,25,0.05)]">
+            <p className="font-mono text-xs uppercase tracking-[0.16em] text-forest font-medium">
+              El propósito
+            </p>
+            <h2 className="mt-2 font-serif text-2xl font-semibold text-ink">
+              ¿Para qué se realiza el diagnóstico?
+            </h2>
+            <p className="mt-2 text-sm sm:text-base text-ink-soft leading-relaxed">
+              Identificar las necesidades reales de la comunidad para trabajar en conjunto en
+              soluciones que mejoren su calidad de vida.
+            </p>
+          </article>
+
+          <article className="rounded-[24px] border border-earth/20 bg-olive-pale/45 p-5 sm:p-6">
+            <p className="font-mono text-xs uppercase tracking-[0.16em] text-forest font-medium">
+              Impacto esperado en nuestra comunidad
+            </p>
+            <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-ink-soft">
+              {COMMUNITY_IMPACTS.map((impact) => (
+                <li key={impact} className="flex items-start gap-2">
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-terracotta"
+                    aria-hidden="true"
+                  />
+                  <span>{impact}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        </div>
+
         <div className="space-y-6">
           <div className="max-w-2xl space-y-2">
             <p className="font-mono text-xs uppercase tracking-[0.16em] text-forest font-medium">

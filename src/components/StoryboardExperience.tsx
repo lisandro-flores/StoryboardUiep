@@ -40,11 +40,15 @@ const ACCENT_STYLES: Record<
   },
 };
 
+const getPhaseLabel = (phase: string) => {
+  const stageNumber = phase.match(/Etapa (\d+) de \d+/)?.[1];
+  return stageNumber ? `Etapa ${stageNumber}` : phase.split(' · ')[0];
+};
+
 export default function StoryboardExperience({ baseUrl }: StoryboardExperienceProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('editorial');
+  const [viewMode, setViewMode] = useState<ViewMode>('technical');
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
-  const [openTechMap, setOpenTechMap] = useState<Record<number, boolean>>({});
-  // Permite alternar entre foto principal y secundaria en escenas con doble registro en campo
+  // Permite alternar entre las dos fotografías de algunas tarjetas
   const [secondaryActiveMap, setSecondaryActiveMap] = useState<Record<number, boolean>>({});
   const [lightboxMedia, setLightboxMedia] = useState<{
     jpg: string;
@@ -57,7 +61,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [ambientOn, setAmbientOn] = useState(false);
   const [comfortReading, setComfortReading] = useState(false);
-  const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(false);
 
   const [docPlaying, setDocPlaying] = useState(true);
   const [docProgress, setDocProgress] = useState(0);
@@ -280,7 +284,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
   const buildNarration = (scene: StoryboardScene) => {
     const cleanDialogue = scene.dialogue.replace(/[«»""]/g, '');
-    return `Paso ${scene.number}: ${scene.title}. ${scene.whatLines.join(' ')} ${scene.howDescription} ${cleanDialogue}`;
+    return `Tarjeta ${scene.number}: ${scene.title}. ${scene.whatLines.join(' ')} ${scene.howDescription} ${cleanDialogue}`;
   };
 
   const speakSingleScene = (index: number) => {
@@ -367,7 +371,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
   const jumpToScene = (index: number) => {
     setActiveSceneIndex(index);
-    setMobileControlsOpen(false);
+    setControlsOpen(false);
     if (ambientOn) soundscape.playHarmonicNote(index);
 
     if (viewMode === 'carousel' && emblaApi) {
@@ -387,6 +391,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const handleModeSwitch = (mode: ViewMode) => {
     stopSpeech();
     setViewMode(mode);
+    setControlsOpen(false);
     if (mode === 'documentary') {
       setDocPlaying(true);
       setDocProgress(0);
@@ -399,7 +404,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     setLightboxMedia({
       jpg: `${baseUrl}${media ? media.jpg : scene.imageJpg}`,
       alt: media ? media.alt : scene.imageAlt,
-      label: `PASO ${scene.numeral} · ${scene.locationTag}`,
+      label: `TARJETA ${scene.numeral} · ${scene.locationTag}`,
       subtitle: `${scene.whatLines[0]} ${scene.whatLines[1]}`,
     });
   };
@@ -410,54 +415,58 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     <section id="relato-interactivo" className="relative pb-20">
       <div
         role="progressbar"
-        aria-label="Progreso del recorrido"
+        aria-label="Avance de tarjetas"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round((activeSceneIndex / (STORYBOARD_SCENES.length - 1)) * 100)}
-        className="fixed inset-x-0 top-0 z-[60] h-1 bg-earth/15 no-print"
+        aria-orientation="vertical"
+        className="fixed left-2 sm:left-4 top-1/2 z-[60] h-36 sm:h-44 w-1 -translate-y-1/2 overflow-hidden rounded-full bg-earth/15 no-print"
       >
         <motion.div
-          style={{ scaleX }}
-          className="h-full origin-left bg-gradient-to-r from-forest via-olive to-terracotta"
+          style={{ scaleY: scaleX }}
+          className="h-full origin-top bg-gradient-to-b from-forest via-olive to-terracotta"
         />
       </div>
 
       {/* DOCK FLOTANTE DE NAVEGACIÓN Y ACCESIBILIDAD */}
       <div className="relative sm:sticky sm:top-2 z-40 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 mb-6 sm:mb-10 no-print">
         <div className="rounded-2xl sm:rounded-[26px] bg-cream-soft/95 backdrop-blur-xl border border-earth/20 shadow-[0_12px_34px_rgba(55,35,18,0.12)] p-2 sm:px-4 sm:py-3 space-y-2.5">
-          <div className="flex sm:hidden items-center justify-between gap-3 px-1 py-0.5">
+          <div className="flex items-center justify-between gap-3 px-1 py-0.5">
             <div className="min-w-0">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-earth">
-                Paso {String(activeSceneIndex + 1).padStart(2, '0')} de{' '}
-                {String(STORYBOARD_SCENES.length).padStart(2, '0')}
-              </p>
-              <p className="truncate text-sm font-semibold text-ink">
+              <p className="truncate text-sm sm:text-base font-semibold text-ink">
                 {currentScene.title}
               </p>
             </div>
             <button
               type="button"
-              onClick={() => setMobileControlsOpen((open) => !open)}
-              aria-expanded={mobileControlsOpen}
+              onClick={() => setControlsOpen((open) => !open)}
+              aria-label={controlsOpen ? 'Ocultar opciones' : 'Mostrar opciones'}
+              aria-expanded={controlsOpen}
               aria-controls="mobile-story-controls"
-              className="shrink-0 rounded-full bg-forest px-4 py-2.5 text-xs font-semibold text-cream transition-colors hover:bg-forest-dark"
+              title={controlsOpen ? 'Ocultar opciones' : 'Mostrar opciones'}
+              className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-cream-deep/70 hover:text-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
             >
-              {mobileControlsOpen ? 'Cerrar' : 'Explorar pasos'}
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <path d="M4 6h16M4 12h16M4 18h16" />
+                <circle cx="16" cy="6" r="2.2" fill="var(--color-cream-soft)" />
+                <circle cx="8" cy="12" r="2.2" fill="var(--color-cream-soft)" />
+                <circle cx="13" cy="18" r="2.2" fill="var(--color-cream-soft)" />
+              </svg>
             </button>
-          </div>
-
-          <div className="h-1 overflow-hidden rounded-full bg-earth/10 sm:hidden" aria-hidden="true">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-forest via-olive to-terracotta transition-[width] duration-300"
-              style={{
-                width: `${((activeSceneIndex + 1) / STORYBOARD_SCENES.length) * 100}%`,
-              }}
-            />
           </div>
 
           <div
             id="mobile-story-controls"
-            className={`${mobileControlsOpen ? 'flex' : 'hidden'} sm:flex flex-wrap items-center justify-between gap-2.5`}
+            className={`${controlsOpen ? 'flex' : 'hidden'} flex-wrap items-center justify-between gap-2.5`}
           >
             <div
               className="inline-flex flex-wrap items-center rounded-full bg-cream-deep/70 p-1 border border-earth/15"
@@ -466,7 +475,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             >
               {(
                 [
-                  { id: 'editorial', label: 'Paso a Paso Real' },
+                  { id: 'editorial', label: 'Recorrido en campo' },
                   { id: 'documentary', label: 'Modo Documental' },
                   { id: 'carousel', label: 'Carrusel Táctil' },
                   { id: 'technical', label: 'Ficha Completa' },
@@ -554,7 +563,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
           </div>
 
           <div
-            className={`${mobileControlsOpen ? 'flex' : 'hidden'} sm:flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5`}
+            className={`${controlsOpen ? 'flex' : 'hidden'} items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5`}
           >
             {STORYBOARD_SCENES.map((scene, idx) => {
               const isCurrent = activeSceneIndex === idx;
@@ -575,10 +584,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                     />
                   )}
                   <span className="relative z-10 font-mono mr-1.5 text-[11px]">
-                    {scene.numeral}
+                    TARJETA {scene.numeral}
                   </span>
                   <span className="relative z-10 hidden md:inline">
-                    {scene.phase.replace(/^Etapa \d+[B]? · /, '')}
+                    {getPhaseLabel(scene.phase)}
                   </span>
                 </button>
               );
@@ -614,7 +623,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                           setActiveSceneIndex(i);
                           setDocProgress(0);
                         }}
-                        aria-label={`Saltar a paso ${s.number}`}
+                        aria-label={`Saltar a la tarjeta ${s.number} de ${STORYBOARD_SCENES.length}: ${s.title}`}
                         className="h-1.5 rounded-full bg-cream/25 overflow-hidden cursor-pointer"
                       >
                         <div
@@ -628,21 +637,26 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
                 <div className="flex flex-wrap items-center justify-between gap-2 text-cream">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs font-semibold tracking-wider text-peach">
-                      PASO {currentScene.numeral} / 08
-                    </span>
                     <span className="text-xs sm:text-sm font-medium text-cream/90">
                       {currentScene.locationTag}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] tracking-wide text-cream/60">
+                      <span aria-hidden="true">
+                        {currentScene.numeral}/{String(STORYBOARD_SCENES.length).padStart(2, '0')}
+                      </span>
+                      <span className="sr-only">
+                        Tarjeta {currentScene.numeral} de {STORYBOARD_SCENES.length}
+                      </span>
+                    </span>
                     <button
                       type="button"
                       onClick={() => speakSingleScene(activeSceneIndex)}
                       className="rounded-full bg-cream/15 backdrop-blur-md border border-cream/25 px-3.5 py-1 text-xs font-semibold text-cream hover:bg-cream/25 transition-colors cursor-pointer"
                     >
-                      {speakingIndex === activeSceneIndex ? 'Silenciar voz' : 'Narrar paso'}
+                      {speakingIndex === activeSceneIndex ? 'Silenciar voz' : 'Narrar tarjeta'}
                     </button>
                     <button
                       type="button"
@@ -683,15 +697,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       className="max-w-3xl space-y-2"
                     >
                       <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-peach">
-                        ¿Qué se hace y cómo se trabaja?
+                        {getPhaseLabel(currentScene.phase)}
                       </p>
                       <h2 className="font-serif text-xl sm:text-3xl font-medium text-cream leading-snug">
-                        {currentScene.whatLines[0]}{' '}
-                        <span className="text-peach">{currentScene.whatLines[1]}</span>
+                        {currentScene.title}
                       </h2>
-                      <p className="text-xs sm:text-base text-cream/85 leading-relaxed">
-                        {currentScene.howDescription}
-                      </p>
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -708,7 +718,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 }}
                 className="rounded-full bg-cream-soft border border-earth/25 px-5 py-2.5 text-xs sm:text-sm font-semibold text-ink disabled:opacity-35 hover:bg-peach-pale transition-colors cursor-pointer"
               >
-                Paso anterior
+                Tarjeta anterior
               </button>
 
               <button
@@ -728,7 +738,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 }}
                 className="rounded-full bg-forest px-5 py-2.5 text-xs sm:text-sm font-semibold text-cream disabled:opacity-35 hover:bg-forest-dark transition-colors cursor-pointer"
               >
-                Siguiente paso
+                Siguiente tarjeta
               </button>
             </div>
           </motion.div>
@@ -765,9 +775,17 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       </picture>
                       <div className="absolute top-4 left-4 rounded-full bg-cream-soft/92 backdrop-blur-md border border-earth/20 px-3.5 py-1">
                         <span className="font-mono text-xs font-semibold text-forest">
-                          {scene.numeral} · {scene.locationTag}
+                          {scene.locationTag}
                         </span>
                       </div>
+                      <span className="absolute top-4 right-4 rounded-full bg-ink/55 px-2.5 py-1 font-mono text-[10px] tracking-wide text-cream/80 backdrop-blur-sm">
+                        <span aria-hidden="true">
+                          {scene.numeral}/{String(STORYBOARD_SCENES.length).padStart(2, '0')}
+                        </span>
+                        <span className="sr-only">
+                          Tarjeta {scene.numeral} de {STORYBOARD_SCENES.length}
+                        </span>
+                      </span>
                       <div className="absolute bottom-3 right-4 rounded-full bg-ink/75 backdrop-blur-xs px-3 py-1 text-[11px] font-medium text-cream">
                         Toca para ver foto completa
                       </div>
@@ -784,11 +802,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 disabled={activeSceneIndex === 0}
                 className="rounded-full bg-cream-soft border border-earth/25 px-5 py-2.5 text-xs sm:text-sm font-semibold text-ink disabled:opacity-35 hover:bg-peach-pale transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
-                Anterior
+                Tarjeta anterior
               </button>
 
               <span className="font-mono text-xs sm:text-sm text-ink-muted">
-                Desliza con el dedo · {currentScene.numeral} de 08
+                Desliza con el dedo
               </span>
 
               <button
@@ -797,7 +815,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 disabled={activeSceneIndex === STORYBOARD_SCENES.length - 1}
                 className="rounded-full bg-forest px-5 py-2.5 text-xs sm:text-sm font-semibold text-cream disabled:opacity-35 hover:bg-forest-dark transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
-                Siguiente
+                Siguiente tarjeta
               </button>
             </div>
 
@@ -817,7 +835,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                         ACCENT_STYLES[currentScene.accent].pill
                       }`}
                     >
-                      {currentScene.phase}
+                      {getPhaseLabel(currentScene.phase)}
                     </span>
                     <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-ink">
                       {currentScene.title}
@@ -831,36 +849,17 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                   >
                     <AudioWave active={speakingIndex === activeSceneIndex} />
                     <span>
-                      {speakingIndex === activeSceneIndex ? 'Detener voz' : 'Escuchar paso'}
+                      {speakingIndex === activeSceneIndex ? 'Detener voz' : 'Escuchar tarjeta'}
                     </span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="rounded-2xl bg-gradient-to-br from-peach-pale/80 to-cream p-5 border border-earth/20">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth mb-1.5">
-                      ¿Qué se está haciendo?
-                    </p>
-                    <p className="font-serif text-lg sm:text-xl font-medium text-ink leading-snug">
-                      {currentScene.whatLines[0]} {currentScene.whatLines[1]}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl bg-olive-pale/45 p-5 border border-olive/30 space-y-2">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest">
-                      ¿Cómo se está haciendo?
-                    </p>
-                    <p className="text-sm sm:text-base text-ink-soft leading-relaxed">
-                      {currentScene.howDescription}
-                    </p>
-                  </div>
-                </div>
               </motion.div>
             </AnimatePresence>
           </motion.div>
         ) : (
           /* ----------------------------------------------------------------
-             MODO 1 & 4: PASO A PASO REAL EN CAMPO / FICHA COMPLETA
+             RECORRIDO EN CAMPO / FICHA COMPLETA
              ---------------------------------------------------------------- */
           <div ref={editorialListRef} className="relative">
             <div
@@ -873,8 +872,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             <div className="space-y-8 md:space-y-12 lg:space-y-20 relative z-10">
               {STORYBOARD_SCENES.map((scene, index) => {
                 const isReversed = index % 2 === 1 && viewMode === 'editorial';
-                const isTechExpanded =
-                  viewMode === 'technical' || Boolean(openTechMap[scene.number]);
+                const isTechExpanded = viewMode === 'technical';
                 const showSecondary = Boolean(secondaryActiveMap[scene.number] && scene.secondaryPhoto);
                 const activeWebp =
                   showSecondary && scene.secondaryPhoto ? scene.secondaryPhoto.webp : scene.imageWebp;
@@ -912,7 +910,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                           <TiltPlate
                             maxTilt={3.8}
                             onClick={() => openScenePhoto(scene, showSecondary)}
-                            ariaLabel={`Ampliar fotografía real del paso ${scene.number}: ${scene.title}`}
+                            ariaLabel={`Ampliar fotografía real de la tarjeta ${scene.number}: ${scene.title}`}
                             className="group overflow-hidden rounded-[22px] border border-earth/20 bg-cream-deep cursor-zoom-in"
                           >
                             <div className="overflow-hidden aspect-[4/3]">
@@ -934,6 +932,14 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                                 {scene.locationTag}
                               </span>
                             </div>
+                            <span className="absolute top-3.5 right-3.5 rounded-full bg-ink/55 px-2.5 py-1 font-mono text-[10px] tracking-wide text-cream/80 backdrop-blur-sm">
+                              <span aria-hidden="true">
+                                {scene.numeral}/{String(STORYBOARD_SCENES.length).padStart(2, '0')}
+                              </span>
+                              <span className="sr-only">
+                                Tarjeta {scene.numeral} de {STORYBOARD_SCENES.length}
+                              </span>
+                            </span>
 
                             <div className="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4 no-print">
                               <span className="rounded-full bg-cream-soft/95 px-3.5 py-1 text-xs font-semibold text-ink shadow-sm">
@@ -942,11 +948,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                             </div>
                           </TiltPlate>
 
-                          {/* Selector de segunda fotografía real cuando el paso tiene 2 evidencias */}
+                          {/* Selector de segunda fotografía real cuando la tarjeta tiene dos evidencias */}
                           {scene.secondaryPhoto && (
                             <div className="flex items-center justify-between gap-2 px-1 no-print">
                               <span className="font-mono text-[11px] text-ink-muted">
-                                2 registros reales en esta etapa:
+                                2 fotografías de esta tarjeta:
                               </span>
                               <div className="inline-flex rounded-full bg-cream-deep/75 p-0.5 border border-earth/15">
                                 <button
@@ -960,7 +966,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                                       : 'text-ink-soft hover:text-ink'
                                   }`}
                                 >
-                                  Foto 01
+                                  Foto 01 de 02
                                 </button>
                                 <button
                                   type="button"
@@ -973,7 +979,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                                       : 'text-ink-soft hover:text-ink'
                                   }`}
                                 >
-                                  Foto 02 · {scene.secondaryPhoto.label}
+                                  Foto 02 de 02 · {scene.secondaryPhoto.label}
                                 </button>
                               </div>
                             </div>
@@ -988,13 +994,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <span className="font-serif text-3xl sm:text-4xl font-semibold text-earth/45 leading-none select-none">
-                                {scene.numeral}
-                              </span>
                               <span
                                 className={`inline-block rounded-full border px-3 py-0.5 text-xs font-semibold ${accent.pill}`}
                               >
-                                {scene.phase}
+                                {getPhaseLabel(scene.phase)}
                               </span>
                             </div>
 
@@ -1016,52 +1019,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                             {scene.title}
                           </h2>
 
-                          {/* Bloque 1: ¿Qué se está haciendo? */}
-                          <div
-                            className={`rounded-2xl bg-gradient-to-br ${accent.cardTint} border border-earth/20 p-4 sm:p-5`}
-                          >
-                            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth font-semibold mb-1">
-                              ¿Qué se está haciendo?
-                            </p>
-                            <p className="font-serif text-base sm:text-lg font-medium text-ink leading-snug">
-                              {scene.whatLines[0]}
-                              <br />
-                              {scene.whatLines[1]}
-                            </p>
-                          </div>
-
-                          {/* Bloque 2: ¿Cómo se está haciendo en la práctica? */}
-                          <div className="rounded-2xl bg-olive-pale/45 border border-olive/30 p-4 sm:p-5 space-y-2">
-                            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest font-semibold">
-                              ¿Cómo se está haciendo?
-                            </p>
-                            <p className="text-sm sm:text-[15px] text-ink leading-relaxed">
-                              {scene.howDescription}
-                            </p>
-                            <p className="text-xs sm:text-sm italic text-ink-soft pt-1 border-t border-olive/20">
-                              {scene.dialogue}
-                            </p>
-                          </div>
-
-                          {viewMode === 'editorial' && (
-                            <div className="pt-0.5 no-print">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setOpenTechMap((prev) => ({
-                                    ...prev,
-                                    [scene.number]: !prev[scene.number],
-                                  }))
-                                }
-                                aria-expanded={isTechExpanded}
-                                className="text-xs font-semibold text-earth hover:text-forest transition-colors underline decoration-earth/35 underline-offset-4 cursor-pointer"
-                              >
-                                {isTechExpanded
-                                  ? 'Ocultar detalle documental de fotografía'
-                                  : 'Ver descripción de evidencia fotográfica y secuencia'}
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </div>
 

@@ -162,7 +162,7 @@ export default function TerritoryMapExplorer({ baseUrl }: TerritoryMapExplorerPr
                     onClick={() => jumpToRelatedScene(activeNode.relatedScene)}
                     className="rounded-full bg-forest px-4 py-2 text-xs font-semibold text-cream hover:bg-forest-dark transition-colors cursor-pointer shrink-0"
                   >
-                    Ir al paso 0{activeNode.relatedScene}
+                    Ir a la tarjeta 0{activeNode.relatedScene}
                   </button>
                 </div>
               </motion.div>

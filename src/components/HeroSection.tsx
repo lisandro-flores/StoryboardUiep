@@ -60,13 +60,13 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
         {/* Barra institucional superior */}
         <div className="hero-topbar flex flex-wrap items-center justify-between gap-3 pb-4 sm:pb-6 border-b border-earth/20">
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="bg-cream-soft border border-earth/20 rounded-2xl px-3 py-2 shadow-xs">
+            <div className="shrink-0">
               <img
-                src={`${baseUrl}assets/uieplogo.png`}
+                src={`${baseUrl}assets/uieplogo-transparent.png`}
                 alt="Universidad Intercultural del Estado de Puebla (UIEP)"
                 className="h-11 sm:h-13 w-auto object-contain"
-                width={116}
-                height={86}
+                width={150}
+                height={112}
               />
             </div>
             <div>
@@ -78,44 +78,23 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
               </p>
             </div>
           </div>
-
-          <div className="inline-flex items-center gap-2 rounded-full bg-rose-pale/90 border border-rose px-3.5 py-1.5">
-            <span className="h-2 w-2 rounded-full bg-terracotta animate-pulse" aria-hidden="true" />
-            <span className="text-xs sm:text-sm font-semibold tracking-tight text-ink">
-              San José Buenavista, Puebla
-            </span>
-          </div>
         </div>
 
         {/* Escenario principal con fotografía documental real */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 items-center pt-1 sm:pt-2">
           <div className="lg:col-span-7 space-y-4 sm:space-y-5">
-            <div className="hero-fade-up inline-flex items-center gap-3 rounded-full bg-olive-pale/85 border border-olive/35 px-4 py-1">
-              <span className="font-mono text-[11px] font-semibold tracking-wider text-forest">
-                MEMORIA DOCUMENTAL EN CAMPO
-              </span>
-              <span className="h-3 w-px bg-olive/40" aria-hidden="true" />
-              <span className="text-xs font-medium text-forest">
-                100 % registro real en comunidad
-              </span>
-            </div>
-
-            <h1 className="font-serif text-[2.35rem] sm:text-5xl lg:text-[3.7rem] font-semibold leading-[1.02] tracking-[-0.035em] text-ink">
-              <span className="block overflow-hidden pb-1">
-                <span className="hero-mask-line block">Diagnóstico Comunitario</span>
-              </span>
-              <span className="block overflow-hidden pb-1">
-                <span className="hero-mask-line block italic font-medium text-forest">
-                  Participativo
-                </span>
-              </span>
-            </h1>
-
             <p className="hero-fade-up text-[15px] sm:text-lg text-ink-soft leading-relaxed max-w-xl">
-              Escaneaste nuestra lona: ahora acompaña el trabajo en{' '}
-              <strong className="font-semibold text-ink">San José Buenavista</strong> con fotos
-              reales. Conoce cómo la comunidad y la brigada identifican necesidades y construyen
-              propuestas, paso a paso.
+              Este diagnóstico reúne la experiencia de habitantes de{' '}
+              <strong className="font-semibold text-ink">San José Buenavista</strong> y el trabajo
+              técnico de estudiantes de Ingeniería Civil Sustentable de la UIEP. Su propósito es
+              identificar prioridades locales y aportar una base clara para desarrollar propuestas
+              pertinentes al territorio.
+            </p>
+            <p className="hero-fade-up text-sm sm:text-base text-ink-soft leading-relaxed max-w-xl">
+              El proceso integró coordinación con autoridades, recorridos de campo, encuestas,
+              conversatorios, mapa social y análisis de información. Así, las propuestas se
+              fundamentan en necesidades expresadas por la comunidad y en criterios de ingeniería
+              sustentable.
             </p>
 
             <div className="hero-fade-up flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1 no-print">
@@ -123,7 +102,7 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
                 href="#relato-interactivo"
                 className="inline-flex min-h-12 items-center justify-center rounded-full bg-forest px-6 py-3 text-sm font-semibold text-cream shadow-[0_8px_20px_rgba(31,74,35,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-forest-dark sm:w-fit"
               >
-                Comenzar el recorrido
+                Explorar el proceso
               </a>
             </div>
           </div>
@@ -150,15 +129,12 @@ export default function HeroSection({ baseUrl }: HeroSectionProps) {
               <div className="flex items-center justify-between gap-4 pt-3.5 px-1.5">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth">
-                    Registro directo en localidad
+                    Registro fotográfico de campo
                   </p>
                   <p className="font-serif text-sm sm:text-base text-ink font-medium">
-                    Brigada UIEP en calles de San José Buenavista
+                    Brigada UIEP en San José Buenavista
                   </p>
                 </div>
-                <span className="font-mono text-xs px-3 py-1 rounded-full bg-peach/55 text-ink font-semibold shrink-0">
-                  10 FOTOS REALES
-                </span>
               </div>
             </TiltPlate>
           </div>
