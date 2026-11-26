@@ -3,31 +3,30 @@
 **Diagnóstico Comunitario Participativo — San José Buenavista, Puebla**  
 *Universidad Intercultural del Estado de Puebla (UIEP) · Ingeniería Civil Sustentable – Vinculación Comunitaria*
 
-Página web interactiva y storyboard ilustrado en 8 viñetas diseñado para las vecinas, vecinos, comités y autoridades de **San José Buenavista, Puebla**, pensado para consultarse fácilmente desde cualquier celular al escanear el código QR de la lona informativa comunitaria (90 × 120 cm).
+Aplicación web editorial e interactiva construida con **Astro + React + Tailwind CSS v4 + Motion + Embla Carousel + Lenis**, diseñada para consultarse desde cualquier teléfono móvil al escanear el código QR de la lona comunitaria en **San José Buenavista, Puebla**.
 
-## Características principales
+## Stack y librerías modernas
 
-- **8 escenas ilustradas en acuarela editorial** armonizadas con la paleta oficial de la lona comunitaria (`#FAF3E8` crema cálido, `#1F4A23` y `#7D9154` verde bosque/olivo, `#F1C28B` durazno/terracota, `#F3B8BC` rosa pastel y `#8E6545` café tierra).
-- **3 modos de visualización integrados:**
-  1. **Historia Ilustrada (Modo Vecinos):** Lectura corrida, cálida y accesible para móvil.
-  2. **Viñeta por Viñeta:** Presentación interactiva paso a paso para talleres o proyecciones.
-  3. **Ficha de Storyboard:** Muestra todas las descripciones visuales detalladas, textos en pantalla, diálogos comunitarios y notas de transición.
-- **Lectura en voz alta (`es-MX`):** Botón para escuchar cada escena o toda la historia narrada, facilitando el acceso a personas adultas mayores y familias.
-- **Imágenes optimizadas (`.webp` + `.jpg`):** Carga ligera para redes móviles rurales e impresión limpia a PDF (`Ctrl + P`).
+- **Astro + Islas de React 19:** Carga inicial estática ultraligera pensada para redes móviles rurales, hidratando solo la experiencia interactiva.
+- **Motion (`motion/react`):** Hilo de progreso superior con física `spring`, píldoras de navegación compartidas (`layoutId`), revelados editoriales `whileInView`, visor de láminas con `AnimatePresence` y barras cinéticas de voz.
+- **Embla Carousel (`embla-carousel-react`):** Modo **Carrusel Táctil** para deslizar las 8 láminas con física nativa en dispositivos móviles.
+- **Lenis:** Desplazamiento inercial suave respetando `prefers-reduced-motion`.
+- **Cero iconos ni emojis:** Jerarquía 100 % editorial mediante tipografías `Fraunces` (serif variable orgánica), `Plus Jakarta Sans` y numerales `JetBrains Mono` (`01` — `08`), armonizada con la paleta cálida de la lona (`#FAF3E8`, `#1F4A23`, `#7D9154`, `#F1C28B`, `#EAB6BA`, `#8E6545`).
 
-## Estructura del proyecto
+## Desarrollo local
 
-```text
-.
-├── index.html       # Página web principal lista para GitHub Pages / QR
-├── styles.css       # Sistema visual orgánico armonizado con la lona 90x120 cm
-├── app.js           # Datos de las 8 escenas, modos de vista, audio y visor
-├── storyboard.md    # Guion técnico e ilustrado completo en formato Markdown
-└── assets/          # Logotipo UIEP e ilustraciones optimizadas (escena-01 a 08)
+```bash
+npm install
+npm run dev
 ```
 
-## Créditos de Brigada
+Compilación de producción:
 
-- **Asesor de Brigada:** Dr. Rogelio Rojas Ramos
-- **Estudiantes de Ingeniería Civil Sustentable (UIEP):**
-  Ricardo Arenas Rodríguez, María Paz Contreras Maceda, Brissa Elizabeth Espíndola López, Leonel Martín López Cuahutle, Rosendo Sánchez Gutiérrez, David Balderas López, Pedro Ángel Cruz Sánchez, Osmar Leyva Flores, Roberto Melchor Velázquez e Isaías Jasciel Zúñiga Sanromán.
+```bash
+npm run build
+npm run preview
+```
+
+## Despliegue automático en GitHub Pages
+
+El repositorio incluye [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). En GitHub ve a **Settings → Pages → Build and deployment → Source: GitHub Actions** y cada `git push` a `main` publicará automáticamente el sitio en `https://lisandro-flores.github.io/StoryboardUiep/`.

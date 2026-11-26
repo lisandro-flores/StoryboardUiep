@@ -1,8 +1,13 @@
+# Salidas de compilación y caché de Astro
+dist/
+.astro/
+node_modules/
+
 # Recursos crudos de referencia local (fotos de WhatsApp y archivos pesados de impresión)
 recursos/
 
-# Archivos de sistema y entorno
+# Entorno y sistema
+.env
+.env.*
 .DS_Store
 Thumbs.db
-node_modules/
-.env

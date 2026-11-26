@@ -10,7 +10,7 @@
 
 ## Escena 1: Bienvenida y conexión con San José Buenavista
 
-![Escena 1 - Bienvenida y conexión comunitaria](assets/escena-01.jpg)
+![Escena 1 - Bienvenida y conexión comunitaria](public/assets/escena-01.jpg)
 
 - **Descripción visual detallada:** Plano general abierto a nivel de calle bajo la luz cálida de la mañana. Por un camino de tierra y piedra bordeado de nopales en flor, órganos cactáceos y agaves, llega caminando la brigada de estudiantes de Ingeniería Civil Sustentable de la UIEP junto con su asesor, el Dr. Rogelio Rojas Ramos; portan sombreros para el sol, mochilas, cuadernos de campo, gafetes con cordón azul y chalecos oscuros con franjas reflejantes. Frente a una casa sencilla y con los cerros semiáridos y la iglesia comunitaria al fondo, un abuelo con sombrero, una abuelita con rebozo rosa pastel, una madre y dos niños los reciben con un apretón de manos y sonrisas de confianza y hospitalidad.
 - **Texto en pantalla:**
@@ -24,7 +24,7 @@
 
 ## Escena 2: ¿Qué es el Diagnóstico Comunitario Participativo?
 
-![Escena 2 - ¿De qué trata el Diagnóstico Comunitario Participativo?](assets/escena-02.jpg)
+![Escena 2 - ¿De qué trata el Diagnóstico Comunitario Participativo?](public/assets/escena-02.jpg)
 
 - **Descripción visual detallada:** Plano medio grupal a la misma altura visual bajo la sombra de un mezquite en una plazuela de la comunidad. Una adulta mayor con rebozo, un vecino campesino con sombrero, una mujer joven y un niño conversan con confianza y gestos abiertos frente a tres jóvenes brigadistas de la UIEP que escuchan con atención y toman notas en sus libretas. En la parte superior flotan delicadas viñetas en acuarela suave (un puente peatonal, una gota de agua, una escuela con rampa y dos manos estrechándose) que simbolizan los temas nacidos de la propia gente. Emoción de empatía, igualdad e interculturalidad.
 - **Texto en pantalla:**
@@ -38,7 +38,7 @@
 
 ## Escena 3: Etapa 1 – Nos organizamos con autoridades y comités
 
-![Escena 3 - Etapa 1 Planeación](assets/escena-03.jpg)
+![Escena 3 - Etapa 1 Planeación](public/assets/escena-03.jpg)
 
 - **Descripción visual detallada:** Plano medio amplio en el interior luminoso y sencillo de la oficina comunitaria (con piso de mosaico tradicional, paredes color crema y ventana abierta hacia los cerros y cactáceas de San José Buenavista). Alrededor de una mesa de madera se reúnen autoridades locales, una mujer representante comunitaria, un adulto mayor, el Dr. Rogelio Rojas Ramos y estudiantes de la brigada con sus chalecos y gafetes. Sobre la mesa revisan hojas ilustradas de planeación y calendarios con plumones de colores, señalando acuerdos con gestos de respeto, orden y compromiso compartido.
 - **Texto en pantalla:**
@@ -52,7 +52,7 @@
 
 ## Escena 4: Etapa 2 – Recorremos calles, caminos y escuelas
 
-![Escena 4 - Etapa 2 Trabajo de campo](assets/escena-04.jpg)
+![Escena 4 - Etapa 2 Trabajo de campo](public/assets/escena-04.jpg)
 
 - **Descripción visual detallada:** Plano general-medio exterior sobre una calle de tierra y piedra bajo el cielo despejado de San José Buenavista. En primer plano derecho, frente a la escuela comunitaria con escalones amarillos y un mural colorido de nopales en flor, una estudiante con sombrero de ala ancha y un estudiante con tablilla de encuestas escuchan con calidez a una mamá, su hijo pequeño y un abuelito con bastón que señala los escalones y el camino. Al fondo a la izquierda, otros dos brigadistas observan y anotan el estado de una llave de agua y el cruce estrecho de piedra sobre la barranca. Ambiente cercano, respetuoso y atento a la vida cotidiana.
 - **Texto en pantalla:**
@@ -66,7 +66,7 @@
 
 ## Escena 5: Etapa 3 – Dibujamos nuestro mapa social y priorizamos
 
-![Escena 5 - Etapa 3 Análisis y mapa social](assets/escena-05.jpg)
+![Escena 5 - Etapa 3 Análisis y mapa social](public/assets/escena-05.jpg)
 
 - **Descripción visual detallada:** Plano picado suave (tres cuartos cenital) bajo el techado comunitario de lámina con columnas color terracota y barda baja de block, rodeado de vegetación y cerros. Alrededor de una larga mesa de madera conviven adolescentes con uniforme deportivo verde con blanco, un niño pequeño, mujeres de la comunidad, un adulto mayor con sombrero y estudiantes de la UIEP. En el centro de la mesa destaca un gran pliego blanco con el mapa social dibujado a mano con plumones: se aprecian la iglesia, la escuela, las veredas, la barranca y círculos en tonos durazno y verde olivo donde las manos de todos señalan prioridades. Emoción de entusiasmo colectivo y unión intergeneracional.
 - **Texto en pantalla:**
@@ -80,7 +80,7 @@
 
 ## Escena 6: Etapa 4 – Propuestas técnicas viables y sustentables
 
-![Escena 6 - Etapa 4 Propuestas de solución](assets/escena-06.jpg)
+![Escena 6 - Etapa 4 Propuestas de solución](public/assets/escena-06.jpg)
 
 - **Descripción visual detallada:** Composición horizontal tipo tríptico con tres viñetas orgánicas de bordes redondeados sobre papel crema cálido (`#FAF3E8`): (1) A la izquierda, un puente peatonal firme y seguro con barandales sobre la barranca rocosa bordeada de magueyes y nopales, por donde cruzan tranquilos escolares y una abuelita; (2) Al centro, rampas de acceso con pendiente suave y pasamanos junto a los escalones amarillos de la escuela, permitiendo el ingreso digno de una persona mayor en silla de ruedas y niñas y niños; (3) A la derecha, una calle empedrada con materiales regionales mixtos, cunetas pluviales limpias y registros ordenados de agua hacia la iglesia del pueblo. Transmite esperanza práctica, seguridad e inclusión.
 - **Texto en pantalla:**
@@ -94,7 +94,7 @@
 
 ## Escena 7: ¿Qué puedes hacer tú como vecina o vecino?
 
-![Escena 7 - Llamado a la acción en 3 pasos](assets/escena-07.jpg)
+![Escena 7 - Llamado a la acción en 3 pasos](public/assets/escena-07.jpg)
 
 - **Descripción visual detallada:** Ilustración didáctica en tres escenas conectadas por un sendero ondulante sobre fondo crema cálido: (Izquierda – Paso 1) Familias, jóvenes y personas mayores llegando contentos a tomar asiento en círculo bajo el techado comunitario; (Centro – Paso 2) Una vecina con rebozo y un señor con sombrero conversando animadamente, señalando el croquis comunitario mientras una brigadista anota sus propuestas en la encuesta; (Derecha – Paso 3) Vecinas, comité local y dos estudiantes revisando juntos el plano ilustrado de un puente/rampa y levantando el pulgar en señal de aprobación y seguimiento. Ritmo claro, cercano y motivador.
 - **Texto en pantalla:**
@@ -108,7 +108,7 @@
 
 ## Escena 8: ¡Porque juntos construimos un mejor San José Buenavista!
 
-![Escena 8 - Cierre inspirador y agradecimiento](assets/escena-08.jpg)
+![Escena 8 - Cierre inspirador y agradecimiento](public/assets/escena-08.jpg)
 
 - **Descripción visual detallada:** Gran plano general panorámico y emotivo iluminado por la luz dorada de la tarde. En primer plano, hombro con hombro como una sola gran comunidad, posan sonrientes y saludando niñas, niños, jóvenes, madres, padres, abuelitas con rebozo artesanal, adultos mayores con sombrero, autoridades locales, el Dr. Rogelio Rojas Ramos y la brigada de estudiantes de Ingeniería Civil Sustentable de la UIEP con sus chalecos, gafetes y cuadernos de campo. Detrás de ellos lucen los cerros dorados y verdes, nopales en flor, órganos, caminos empedrados y la iglesia comunitaria, con ramas y hojas verdes enmarcando suavemente las esquinas inferiores igual que en la lona informativa. Emoción de orgullo, gratitud y unidad.
 - **Texto en pantalla:**

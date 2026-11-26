@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-cream: #FAF3E8;
+  --color-cream-soft: #FFFBF4;
+  --color-cream-deep: #F1E5D2;
+  --color-forest: #1F4A23;
+  --color-forest-dark: #143217;
+  --color-olive: #7D9154;
+  --color-olive-pale: #E5ECD6;
+  --color-peach: #F1C28B;
+  --color-peach-pale: #FBEAD4;
+  --color-terracotta: #D96B43;
+  --color-rose: #EAB6BA;
+  --color-rose-pale: #F9E6E8;
+  --color-earth: #8E6545;
+  --color-ink: #1C1815;
+  --color-ink-soft: #4F453C;
+  --color-ink-muted: #7A6C5E;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    selection-background-color: #F1C28B;
+  }
+
+  ::selection {
+    background-color: rgba(241, 194, 139, 0.55);
+    color: #1C1815;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-cream);
+    background-image:
+      radial-gradient(at 12% 8%, rgba(241, 194, 139, 0.24) 0px, transparent 48%),
+      radial-gradient(at 88% 18%, rgba(125, 145, 84, 0.14) 0px, transparent 45%),
+      radial-gradient(at 50% 85%, rgba(234, 182, 186, 0.18) 0px, transparent 52%);
+    overflow-x: hidden;
+  }
+}
+
+/* Textura editorial sutil de papel algodón sin ruido invasivo */
+.paper-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Ocultar barra de scroll horizontal en tiras numéricas */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Estilos limpios de impresión para PDF del storyboard */
+@media print {
+  .no-print,
+  .paper-grain {
+    display: none !important;
+  }
+
+  body,
+  html {
+    background: #FAF3E8 !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .print-scene-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

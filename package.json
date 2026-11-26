@@ -1,0 +1,39 @@
+{
+  "name": "storyboard-uiep",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Storyboard web interactivo — Diagnóstico Comunitario Participativo en San José Buenavista, Puebla (UIEP)",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lisandro-flores/StoryboardUiep.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lisandro-flores/StoryboardUiep/issues"
+  },
+  "homepage": "https://github.com/lisandro-flores/StoryboardUiep#readme",
+  "dependencies": {
+    "@astrojs/react": "^7.1.9",
+    "@tailwindcss/vite": "^4.3.5",
+    "astro": "^7.4.13",
+    "embla-carousel-react": "^8.6.0",
+    "lenis": "^1.3.28",
+    "motion": "^14.14.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
