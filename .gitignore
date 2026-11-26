@@ -1,0 +1,8 @@
+# Recursos crudos de referencia local (fotos de WhatsApp y archivos pesados de impresión)
+recursos/
+
+# Archivos de sistema y entorno
+.DS_Store
+Thumbs.db
+node_modules/
+.env

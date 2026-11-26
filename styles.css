@@ -1,0 +1,1084 @@
+/* ==========================================================================
+   Storyboard Ilustrado — Diagnóstico Comunitario Participativo
+   Comunidad de San José Buenavista, Puebla · UIEP Ingeniería Civil Sustentable
+   Armonizado con la lona comunitaria (90x120 cm)
+   ========================================================================== */
+
+:root {
+  --bg-cream: #FAF3E8;
+  --bg-cream-deep: #F3E7D4;
+  --surface-card: #FFFBF4;
+  --surface-warm: #FDF6EA;
+  --forest-deep: #1F4A23;
+  --forest-soft: #2E5E31;
+  --olive-accent: #7D9154;
+  --olive-light: #CAD484;
+  --olive-hills-1: #C9D4AB;
+  --olive-hills-2: #B3C38F;
+  --peach-warm: #F1C28B;
+  --peach-light: #F7D9B4;
+  --terracotta: #E56F42;
+  --rose-pastel: #F3B8BC;
+  --rose-border: #9C6A72;
+  --lilac-pastel: #DCBAD1;
+  --lilac-border: #8C6A84;
+  --earth-brown: #8E6545;
+  --earth-dark: #5C402B;
+  --ink-dark: #1A1714;
+  --ink-body: #2E2822;
+  --ink-muted: #5A5046;
+
+  --font-display: 'Fredoka', system-ui, -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  --organic-radius: 26px 22px 28px 24px / 22px 26px 23px 27px;
+  --organic-radius-sm: 18px 15px 20px 16px / 15px 18px 16px 19px;
+  --card-shadow: 0 4px 0 rgba(142, 101, 69, 0.18), 0 12px 28px rgba(60, 40, 20, 0.06);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-cream);
+  color: var(--ink-body);
+  font-family: var(--font-body);
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-cream);
+  /* Textura sutil tipo papel acuarela artesanal idéntica a la lona */
+  background-image:
+    radial-gradient(rgba(142, 101, 69, 0.06) 1px, transparent 0),
+    radial-gradient(rgba(125, 145, 84, 0.05) 1px, transparent 0),
+    repeating-linear-gradient(
+      0deg,
+      rgba(165, 134, 98, 0.022) 0px,
+      rgba(165, 134, 98, 0.022) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+  background-size: 28px 28px, 36px 36px, 100% 6px;
+  background-position: 0 0, 14px 14px, 0 0;
+  overflow-x: hidden;
+}
+
+/* Utilidades de cintas orgánicas (armonizadas con la lona 90x120 cm) */
+.ribbon-peach {
+  background: linear-gradient(180deg, #F7D1A2 0%, #F1C28B 100%);
+  border: 2.2px solid var(--earth-brown);
+  border-radius: 26px 22px 24px 20px / 18px 21px 17px 20px;
+  box-shadow: 0 3px 0 rgba(126, 89, 58, 0.2);
+}
+
+.ribbon-pink {
+  background: linear-gradient(180deg, #F3B8BC 0%, #EBA5AB 100%);
+  border: 2px solid var(--rose-border);
+  border-radius: 24px 20px 26px 22px / 15px 17px 14px 18px;
+  box-shadow: 0 2px 0 rgba(132, 84, 92, 0.16);
+}
+
+.ribbon-olive {
+  background: linear-gradient(180deg, #D5DF96 0%, #C2CE78 100%);
+  border: 2px solid #6E7B3D;
+  border-radius: 24px 20px 23px 26px / 16px 15px 17px 14px;
+  box-shadow: 0 2px 0 rgba(101, 109, 55, 0.16);
+}
+
+.ribbon-lilac {
+  background: linear-gradient(180deg, #E2C4D8 0%, #D2A7C5 100%);
+  border: 2px solid var(--lilac-border);
+  border-radius: 22px 26px 21px 25px / 16px 14px 17px 15px;
+  box-shadow: 0 2px 0 rgba(114, 83, 108, 0.15);
+}
+
+.container {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ==========================================================================
+   Encabezado Principal (Hero Comunitario)
+   ========================================================================== */
+.site-header {
+  padding: 1.25rem 0 1rem;
+  position: relative;
+}
+
+.hero-card {
+  background: var(--surface-card);
+  border: 2.4px solid var(--earth-brown);
+  border-radius: var(--organic-radius);
+  box-shadow: var(--card-shadow);
+  padding: 1.35rem 1.25rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-top {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+}
+
+.uiep-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uiep-logo {
+  width: 118px;
+  height: auto;
+  object-fit: contain;
+}
+
+.hero-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.hero-banner-box {
+  padding: 0.65rem 1.5rem 0.75rem;
+  width: 100%;
+  max-width: 560px;
+  position: relative;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--ink-dark);
+  font-size: clamp(1.55rem, 3.8vw, 2.45rem);
+  line-height: 1.06;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.hero-location-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: -0.45rem;
+  position: relative;
+  z-index: 2;
+}
+
+.location-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 1.1rem 0.28rem 0.7rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.08rem, 2.5vw, 1.4rem);
+  color: var(--ink-dark);
+}
+
+.location-pin-svg {
+  width: 28px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-top: -4px;
+}
+
+.career-badge {
+  margin-top: 0.55rem;
+  display: inline-block;
+  background: #EDF2DF;
+  border: 1.6px solid var(--olive-accent);
+  color: var(--forest-deep);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.22rem 0.95rem;
+  border-radius: 999px;
+}
+
+.hero-cerro-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hero-cerro-svg {
+  width: 138px;
+  height: auto;
+}
+
+.hero-welcome-text {
+  margin: 1rem auto 0;
+  max-width: 760px;
+  text-align: center;
+  font-size: 1.02rem;
+  color: var(--ink-body);
+  background: rgba(241, 194, 139, 0.2);
+  border: 1.5px dashed rgba(142, 101, 69, 0.45);
+  border-radius: 16px;
+  padding: 0.75rem 1.1rem;
+}
+
+.hero-welcome-text strong {
+  color: var(--forest-deep);
+}
+
+/* ==========================================================================
+   Barra Interactiva de Controles y Navegación Rápida
+   ========================================================================== */
+.controls-bar {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 40;
+  margin: 0.75rem 0 1.35rem;
+}
+
+.controls-inner {
+  background: rgba(255, 251, 244, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--earth-brown);
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(45, 30, 15, 0.1);
+  padding: 0.6rem 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.mode-btn {
+  appearance: none;
+  border: 1.8px solid transparent;
+  background: transparent;
+  color: var(--ink-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.mode-btn:hover {
+  background: rgba(241, 194, 139, 0.28);
+  color: var(--ink-dark);
+}
+
+.mode-btn.active {
+  background: var(--forest-deep);
+  color: #FAF3E8;
+  border-color: var(--forest-deep);
+  box-shadow: 0 2px 0 rgba(20, 48, 22, 0.3);
+}
+
+.action-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.tool-btn {
+  appearance: none;
+  border: 1.8px solid var(--earth-brown);
+  background: var(--bg-cream);
+  color: var(--ink-dark);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.42rem 0.82rem;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.tool-btn:hover {
+  background: var(--peach-light);
+  transform: translateY(-1px);
+}
+
+.tool-btn.speaking {
+  background: var(--terracotta);
+  color: #FFFBF4;
+  border-color: #9E3F1D;
+  animation: pulse-warm 1.6s infinite;
+}
+
+@keyframes pulse-warm {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 111, 66, 0.45); }
+  50% { box-shadow: 0 0 0 7px rgba(229, 111, 66, 0); }
+}
+
+/* Navegador rápido de viñetas 1..8 */
+.scene-Select-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0.45rem 0.15rem 0.1rem;
+  scrollbar-width: none;
+}
+
+.scene-Select-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.scene-dot-btn {
+  flex-shrink: 0;
+  appearance: none;
+  border: 1.6px solid rgba(142, 101, 69, 0.55);
+  background: var(--surface-card);
+  color: var(--ink-body);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.26rem 0.68rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.scene-dot-btn:hover {
+  border-color: var(--forest-deep);
+  background: #EEF3E3;
+}
+
+.scene-dot-btn.current {
+  background: var(--peach-warm);
+  border-color: var(--earth-brown);
+  color: var(--ink-dark);
+  box-shadow: 0 2px 0 rgba(142, 101, 69, 0.25);
+}
+
+/* ==========================================================================
+   Tarjetas de las 8 Escenas / Viñetas del Storyboard
+   ========================================================================== */
+.storyboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scene-card {
+  background: var(--surface-card);
+  border: 2.3px solid var(--earth-brown);
+  border-radius: var(--organic-radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  scroll-margin-top: 7.5rem;
+  transition: transform 0.2s ease;
+}
+
+.scene-card-header {
+  padding: 0.95rem 1.25rem 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-bottom: 1.6px dashed rgba(142, 101, 69, 0.3);
+  background: linear-gradient(180deg, rgba(250, 243, 232, 0.85) 0%, rgba(255, 251, 244, 0.4) 100%);
+}
+
+.scene-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.scene-num-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--forest-deep);
+  color: #FAF3E8;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 0 rgba(20, 42, 22, 0.28);
+}
+
+.scene-stage-tag {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.2rem 0.75rem;
+  color: var(--ink-dark);
+}
+
+.scene-card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+  color: var(--ink-dark);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.scene-audio-btn {
+  appearance: none;
+  border: 1.6px solid var(--olive-accent);
+  background: #F2F6E8;
+  color: var(--forest-deep);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.36rem 0.78rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.16s ease;
+}
+
+.scene-audio-btn:hover {
+  background: var(--olive-light);
+}
+
+.scene-audio-btn.playing {
+  background: var(--forest-deep);
+  color: #FAF3E8;
+  border-color: var(--forest-deep);
+}
+
+/* Contenedor de ilustración 16:9 */
+.scene-figure {
+  margin: 0;
+  position: relative;
+  background: var(--bg-cream-deep);
+  border-bottom: 2px solid rgba(142, 101, 69, 0.35);
+  cursor: zoom-in;
+  overflow: hidden;
+}
+
+.scene-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.scene-figure:hover .scene-img {
+  transform: scale(1.015);
+}
+
+.zoom-hint {
+  position: absolute;
+  bottom: 0.65rem;
+  right: 0.75rem;
+  background: rgba(26, 23, 20, 0.72);
+  color: #FAF3E8;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0.88;
+}
+
+/* Cuerpo narrativo de cada escena */
+.scene-body {
+  padding: 1.15rem 1.25rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+/* Texto en pantalla (máximo 2 líneas, súper legible) */
+.onscreen-banner {
+  background: linear-gradient(180deg, #FDF2E2 0%, #F9E5C8 100%);
+  border: 2px solid var(--earth-brown);
+  border-radius: var(--organic-radius-sm);
+  padding: 0.8rem 1.1rem;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.onscreen-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--earth-brown);
+  margin-bottom: 0.2rem;
+}
+
+.onscreen-text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.05rem, 2.1vw, 1.26rem);
+  line-height: 1.32;
+  color: var(--ink-dark);
+}
+
+/* Globo de diálogo / narración comunitaria */
+.dialogue-box {
+  background: #F6F8F0;
+  border-left: 5px solid var(--olive-accent);
+  border-radius: 10px 16px 16px 10px;
+  padding: 0.85rem 1.05rem;
+  position: relative;
+}
+
+.dialogue-speaker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--forest-deep);
+  margin-bottom: 0.25rem;
+}
+
+.dialogue-quote {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink-body);
+  line-height: 1.52;
+}
+
+/* Cajón desplegable / bloque de Ficha Técnica del Storyboard */
+.tech-specs-toggle {
+  appearance: none;
+  background: transparent;
+  border: 1.5px dashed rgba(142, 101, 69, 0.55);
+  border-radius: 12px;
+  padding: 0.48rem 0.85rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--earth-dark);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  transition: background 0.16s ease;
+}
+
+.tech-specs-toggle:hover {
+  background: rgba(241, 194, 139, 0.2);
+}
+
+.tech-specs-panel {
+  display: none;
+  background: #FAF5EC;
+  border: 1.6px solid rgba(142, 101, 69, 0.4);
+  border-radius: 14px;
+  padding: 0.95rem 1.05rem;
+  font-size: 0.92rem;
+  gap: 0.75rem;
+  flex-direction: column;
+}
+
+.scene-card.show-tech .tech-specs-panel,
+body.mode-storyboard .tech-specs-panel {
+  display: flex;
+}
+
+body.mode-storyboard .tech-specs-toggle {
+  display: none;
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.spec-label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--forest-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.spec-text {
+  margin: 0;
+  color: var(--ink-body);
+  line-height: 1.5;
+}
+
+/* Conector de transición entre escenas */
+.transition-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 1rem;
+  gap: 0.55rem;
+  color: var(--earth-dark);
+  font-size: 0.84rem;
+}
+
+.transition-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 251, 244, 0.82);
+  border: 1.4px dashed rgba(142, 101, 69, 0.5);
+  padding: 0.28rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  max-width: 680px;
+  text-align: center;
+}
+
+body:not(.mode-storyboard) .transition-text-detail {
+  display: none;
+}
+
+.transition-arrow {
+  color: var(--olive-accent);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* ==========================================================================
+   Modo Presentación (Carrusel Paso a Paso)
+   ========================================================================== */
+body.mode-slideshow .storyboard-list .scene-card {
+  display: none;
+}
+
+body.mode-slideshow .storyboard-list .scene-card.active-slide {
+  display: block;
+  animation: fadeSlide 0.28s ease;
+}
+
+body.mode-slideshow .transition-connector {
+  display: none;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slideshow-nav {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+  background: var(--surface-card);
+  border: 2px solid var(--earth-brown);
+  border-radius: 18px;
+  padding: 0.7rem 1rem;
+  box-shadow: var(--card-shadow);
+}
+
+body.mode-slideshow .slideshow-nav {
+  display: flex;
+}
+
+.slide-nav-btn {
+  appearance: none;
+  border: 2px solid var(--forest-deep);
+  background: var(--forest-deep);
+  color: #FAF3E8;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.slide-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.slide-nav-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  background: var(--forest-soft);
+}
+
+.slide-counter {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--ink-dark);
+  font-size: 0.98rem;
+}
+
+/* ==========================================================================
+   Sección Resumen: 3 Pasos para Participar + Créditos de Brigada UIEP
+   ========================================================================== */
+.summary-section {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.35rem;
+}
+
+.participation-card,
+.brigade-card {
+  background: var(--surface-card);
+  border: 2.3px solid var(--earth-brown);
+  border-radius: var(--organic-radius);
+  box-shadow: var(--card-shadow);
+  padding: 1.35rem 1.25rem;
+}
+
+.section-ribbon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.1rem;
+}
+
+.section-ribbon-title {
+  margin: 0;
+  padding: 0.35rem 1.45rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+  color: var(--ink-dark);
+  text-align: center;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.95rem;
+}
+
+.step-box {
+  background: var(--surface-warm);
+  border: 1.8px solid rgba(142, 101, 69, 0.55);
+  border-radius: 18px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.step-number-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--forest-deep);
+}
+
+.step-number-pill span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--peach-warm);
+  border: 1.8px solid var(--earth-brown);
+  color: var(--ink-dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.92rem;
+}
+
+.step-box p {
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--ink-body);
+}
+
+/* Brigada e Iglesia Comunitaria */
+.brigade-layout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.advisor-line {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: var(--ink-dark);
+}
+
+.advisor-line strong {
+  color: var(--forest-deep);
+  font-family: var(--font-display);
+}
+
+.students-subtitle {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.96rem;
+  color: var(--earth-brown);
+}
+
+.students-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.3rem 1.2rem;
+  font-size: 0.92rem;
+}
+
+.students-list li::before {
+  content: "– ";
+  color: var(--earth-brown);
+  font-weight: 700;
+}
+
+.church-illustration-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.church-svg {
+  width: 124px;
+  height: auto;
+}
+
+/* ==========================================================================
+   Pie de Página Armonizado con la Lona
+   ========================================================================== */
+.site-footer {
+  position: relative;
+  margin-top: 2.2rem;
+  padding: 1.5rem 0 2.6rem;
+  overflow: hidden;
+}
+
+.footer-hills-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 92px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.footer-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.footer-leaf-svg {
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+}
+
+.footer-leaf-right {
+  transform: scaleX(-1);
+}
+
+.footer-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.footer-motto-box {
+  width: 100%;
+  max-width: 680px;
+  padding: 0.6rem 1.25rem;
+}
+
+.footer-motto {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-style: italic;
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  color: var(--ink-dark);
+}
+
+.footer-thanks {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--forest-deep);
+}
+
+/* ==========================================================================
+   Visor Lightbox de Ilustraciones
+   ========================================================================== */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 20, 16, 0.86);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.lightbox.open {
+  display: flex;
+}
+
+.lightbox-inner {
+  max-width: 1080px;
+  width: 100%;
+  background: var(--bg-cream);
+  border: 2.5px solid var(--earth-brown);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--earth-brown);
+  background: var(--surface-card);
+  color: var(--ink-dark);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.lightbox-img {
+  display: block;
+  width: 100%;
+  max-height: 76vh;
+  object-fit: contain;
+  background: var(--bg-cream-deep);
+}
+
+.lightbox-caption {
+  padding: 0.75rem 1.1rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink-dark);
+  text-align: center;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Responsividad Móvil (Vecinos escaneando QR)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .hero-top {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.65rem;
+  }
+
+  .uiep-logo {
+    width: 96px;
+  }
+
+  .hero-cerro-wrap {
+    display: none;
+  }
+
+  .controls-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mode-tabs {
+    justify-content: center;
+  }
+
+  .action-tools {
+    justify-content: center;
+  }
+
+  .brigade-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .footer-leaf-svg {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+/* ==========================================================================
+   Estilos de Impresión / PDF de Storyboard Completo
+   ========================================================================== */
+@media print {
+  .controls-bar,
+  .slideshow-nav,
+  .scene-audio-btn,
+  .tech-specs-toggle,
+  .zoom-hint,
+  .lightbox {
+    display: none !important;
+  }
+
+  body, html {
+    background: #FAF3E8 !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .storyboard-list .scene-card {
+    display: block !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 1.2rem;
+    box-shadow: none !important;
+  }
+
+  .tech-specs-panel {
+    display: flex !important;
+  }
+}
