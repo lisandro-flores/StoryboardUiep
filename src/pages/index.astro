@@ -4,6 +4,7 @@ import SmoothScroll from '../components/SmoothScroll';
 import AmbientBackdrop from '../components/AmbientBackdrop';
 import HeroSection from '../components/HeroSection';
 import StoryboardExperience from '../components/StoryboardExperience';
+import FieldPhotoArchive from '../components/FieldPhotoArchive';
 import TerritoryMapExplorer from '../components/TerritoryMapExplorer';
 import CommunityClosing from '../components/CommunityClosing';
 
@@ -18,7 +19,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
   <HeroSection baseUrl={baseUrl} client:load />
   <main>
     <StoryboardExperience baseUrl={baseUrl} client:load />
-    <TerritoryMapExplorer client:visible />
+    <FieldPhotoArchive baseUrl={baseUrl} client:visible />
+    <TerritoryMapExplorer baseUrl={baseUrl} client:visible />
     <CommunityClosing client:visible />
   </main>
 </BaseLayout>

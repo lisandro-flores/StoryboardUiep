@@ -20,27 +20,23 @@ interface StoryboardExperienceProps {
 
 const ACCENT_STYLES: Record<
   StoryboardScene['accent'],
-  { pill: string; cardTint: string; dot: string }
+  { pill: string; cardTint: string }
 > = {
   peach: {
     pill: 'bg-peach-pale text-ink border-peach',
     cardTint: 'from-peach-pale/75 to-cream-soft',
-    dot: 'bg-terracotta',
   },
   rose: {
     pill: 'bg-rose-pale text-ink border-rose',
     cardTint: 'from-rose-pale/70 to-cream-soft',
-    dot: 'bg-rose',
   },
   olive: {
     pill: 'bg-olive-pale text-forest border-olive/40',
     cardTint: 'from-olive-pale/70 to-cream-soft',
-    dot: 'bg-olive',
   },
   forest: {
     pill: 'bg-forest/10 text-forest border-forest/25',
     cardTint: 'from-olive-pale/50 to-cream-soft',
-    dot: 'bg-forest',
   },
 };
 
@@ -48,21 +44,25 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   const [viewMode, setViewMode] = useState<ViewMode>('editorial');
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
   const [openTechMap, setOpenTechMap] = useState<Record<number, boolean>>({});
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // Permite alternar entre foto principal y secundaria en escenas con doble registro en campo
+  const [secondaryActiveMap, setSecondaryActiveMap] = useState<Record<number, boolean>>({});
+  const [lightboxMedia, setLightboxMedia] = useState<{
+    jpg: string;
+    alt: string;
+    label: string;
+    subtitle: string;
+  } | null>(null);
 
-  // Controles sensoriales y de accesibilidad UX
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [ambientOn, setAmbientOn] = useState(false);
   const [comfortReading, setComfortReading] = useState(false);
 
-  // Estado del Modo Documental Guiado
   const [docPlaying, setDocPlaying] = useState(true);
   const [docProgress, setDocProgress] = useState(0);
 
   const editorialListRef = useRef<HTMLDivElement>(null);
 
-  // Hilo superior de progreso global
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 120,
@@ -70,7 +70,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     restDelta: 0.001,
   });
 
-  // Inicializar preferencia de lectura amplia guardada
   useEffect(() => {
     try {
       const saved = localStorage.getItem('uiep-comfort-reading');
@@ -79,7 +78,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
         document.documentElement.classList.add('comfort-reading');
       }
     } catch {
-      // Ignorar modo privado sin localStorage
+      // Ignorar
     }
   }, []);
 
@@ -102,7 +101,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     if (active) soundscape.playHarmonicNote(activeSceneIndex);
   };
 
-  // GSAP ScrollTrigger: parallax interno en acuarelas e hilo conductor vivo
+  // GSAP ScrollTrigger: parallax suave sobre fotografías reales e hilo conductor central
   useGSAP(
     () => {
       if (viewMode !== 'editorial' && viewMode !== 'technical') return;
@@ -113,10 +112,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       images.forEach((img) => {
         gsap.fromTo(
           img,
-          { scale: 1.07, yPercent: -3.5 },
+          { scale: 1.06, yPercent: -3 },
           {
             scale: 1.0,
-            yPercent: 3.5,
+            yPercent: 3,
             ease: 'none',
             scrollTrigger: {
               trigger: img.parentElement,
@@ -146,7 +145,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     { dependencies: [viewMode], scope: editorialListRef }
   );
 
-  // Embla Carousel para el modo táctil
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
     align: 'center',
@@ -171,9 +169,9 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     };
   }, [emblaApi, onEmblaSelect]);
 
-  // Escuchar eventos personalizados desde el Mapa Territorial (ir a escena)
+  // Escuchar eventos desde el Mapa Territorial o el Archivo Fotográfico
   useEffect(() => {
-    const handler = (e: Event) => {
+    const gotoHandler = (e: Event) => {
       const custom = e as CustomEvent<{ sceneNumber: number }>;
       const idx = (custom.detail?.sceneNumber ?? 1) - 1;
       if (idx >= 0 && idx < STORYBOARD_SCENES.length) {
@@ -182,15 +180,32 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
           emblaApi?.scrollTo(idx);
           document.getElementById('relato-interactivo')?.scrollIntoView({ behavior: 'smooth' });
         } else {
-          document.getElementById(`escena-${idx + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById(`escena-${idx + 1}`)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
         }
       }
     };
-    window.addEventListener('uiep:goto-scene', handler);
-    return () => window.removeEventListener('uiep:goto-scene', handler);
+
+    const lightboxHandler = (e: Event) => {
+      const custom = e as CustomEvent<{
+        jpg: string;
+        alt: string;
+        label: string;
+        subtitle: string;
+      }>;
+      if (custom.detail) setLightboxMedia(custom.detail);
+    };
+
+    window.addEventListener('uiep:goto-scene', gotoHandler);
+    window.addEventListener('uiep:open-photo', lightboxHandler);
+    return () => {
+      window.removeEventListener('uiep:goto-scene', gotoHandler);
+      window.removeEventListener('uiep:open-photo', lightboxHandler);
+    };
   }, [viewMode, emblaApi]);
 
-  // Observador de escena activa al hacer scroll
   useEffect(() => {
     if (viewMode === 'carousel' || viewMode === 'documentary' || !('IntersectionObserver' in window))
       return;
@@ -211,17 +226,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     return () => observer.disconnect();
   }, [viewMode]);
 
-  // Atajos de teclado
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (lightboxIndex !== null) {
-        if (e.key === 'Escape') setLightboxIndex(null);
-        if (e.key === 'ArrowRight')
-          setLightboxIndex((prev) =>
-            prev !== null ? Math.min(STORYBOARD_SCENES.length - 1, prev + 1) : null
-          );
-        if (e.key === 'ArrowLeft')
-          setLightboxIndex((prev) => (prev !== null ? Math.max(0, prev - 1) : null));
+      if (lightboxMedia) {
+        if (e.key === 'Escape') setLightboxMedia(null);
         return;
       }
       if (viewMode === 'carousel' && emblaApi) {
@@ -240,9 +248,8 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [lightboxIndex, viewMode, emblaApi]);
+  }, [lightboxMedia, viewMode, emblaApi]);
 
-  // Limpieza al desmontar
   useEffect(() => {
     return () => {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
@@ -250,7 +257,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     };
   }, []);
 
-  // Síntesis de voz en español de México
   const getSpanishVoice = () => {
     if (!('speechSynthesis' in window)) return null;
     const voices = window.speechSynthesis.getVoices();
@@ -270,7 +276,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
   const buildNarration = (scene: StoryboardScene) => {
     const cleanDialogue = scene.dialogue.replace(/[«»""]/g, '');
-    return `Escena ${scene.number}: ${scene.title}. ${scene.onScreenLines.join(' ')} ${cleanDialogue}`;
+    return `Paso ${scene.number}: ${scene.title}. ${scene.whatLines.join(' ')} ${scene.howDescription} ${cleanDialogue}`;
   };
 
   const speakSingleScene = (index: number) => {
@@ -323,7 +329,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     window.speechSynthesis.speak(utterance);
   };
 
-  // Temporizador y narración automática del Modo Documental
   useEffect(() => {
     if (viewMode !== 'documentary') {
       setDocProgress(0);
@@ -384,37 +389,40 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     if (ambientOn) soundscape.playHarmonicNote(activeSceneIndex);
   };
 
-  const toggleTechSpec = (num: number) => {
-    setOpenTechMap((prev) => ({ ...prev, [num]: !prev[num] }));
+  const openScenePhoto = (scene: StoryboardScene, useSecondary = false) => {
+    const media = useSecondary && scene.secondaryPhoto ? scene.secondaryPhoto : null;
+    setLightboxMedia({
+      jpg: `${baseUrl}${media ? media.jpg : scene.imageJpg}`,
+      alt: media ? media.alt : scene.imageAlt,
+      label: `PASO ${scene.numeral} · ${scene.locationTag}`,
+      subtitle: `${scene.whatLines[0]} ${scene.whatLines[1]}`,
+    });
   };
 
   const currentScene = STORYBOARD_SCENES[activeSceneIndex] ?? STORYBOARD_SCENES[0];
-  const lightboxScene = lightboxIndex !== null ? STORYBOARD_SCENES[lightboxIndex] : null;
 
   return (
     <section id="relato-interactivo" className="relative pb-20">
-      {/* Hilo superior global de lectura */}
       <motion.div
         style={{ scaleX }}
         className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-forest via-olive to-terracotta origin-left z-50 no-print"
       />
 
-      {/* DOCK FLOTANTE DE EXPERIENCIA Y ACCESIBILIDAD */}
+      {/* DOCK FLOTANTE DE NAVEGACIÓN Y ACCESIBILIDAD */}
       <div className="sticky top-3 z-40 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 no-print">
         <div className="rounded-[26px] bg-cream-soft/92 backdrop-blur-xl border border-earth/20 shadow-[0_14px_40px_rgba(55,35,18,0.1)] p-2.5 sm:px-4 sm:py-3 space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
-            {/* 4 Modos de Experiencia con píldora compartida Motion */}
             <div
               className="inline-flex flex-wrap items-center rounded-full bg-cream-deep/70 p-1 border border-earth/15"
               role="tablist"
-              aria-label="Modo de experiencia"
+              aria-label="Modo de visualización del proceso"
             >
               {(
                 [
-                  { id: 'editorial', label: 'Recorrido Inmersivo' },
+                  { id: 'editorial', label: 'Paso a Paso Real' },
                   { id: 'documentary', label: 'Modo Documental' },
                   { id: 'carousel', label: 'Carrusel Táctil' },
-                  { id: 'technical', label: 'Guion Completo' },
+                  { id: 'technical', label: 'Ficha Completa' },
                 ] as const
               ).map((tab) => {
                 const active = viewMode === tab.id;
@@ -442,7 +450,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               })}
             </div>
 
-            {/* Controles sensoriales y de confort visual (cero iconos) */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
@@ -454,7 +461,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 }`}
               >
                 <AudioWave active={isPlayingAll} light={isPlayingAll} />
-                <span>{isPlayingAll ? 'Detener voz' : 'Narrar historia'}</span>
+                <span>{isPlayingAll ? 'Detener voz' : 'Escuchar explicación'}</span>
               </button>
 
               <button
@@ -499,7 +506,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             </div>
           </div>
 
-          {/* Tira rápida de escenas 01 — 08 */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
             {STORYBOARD_SCENES.map((scene, idx) => {
               const isCurrent = activeSceneIndex === idx;
@@ -523,7 +529,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                     {scene.numeral}
                   </span>
                   <span className="relative z-10 hidden md:inline">
-                    {scene.phase.replace(/^Etapa \d+ · /, '')}
+                    {scene.phase.replace(/^Etapa \d+[B]? · /, '')}
                   </span>
                 </button>
               );
@@ -532,13 +538,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
         </div>
       </div>
 
-      {/* ====================================================================
-         CUERPO SEGÚN EL MODO SELECCIONADO
-         ==================================================================== */}
+      {/* CONTENIDO PRINCIPAL */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {viewMode === 'documentary' ? (
           /* ----------------------------------------------------------------
-             MODO 2: TEATRO DOCUMENTAL GUIADO (Ken Burns + Barras tipo Story)
+             MODO DOCUMENTAL CON FOTOS REALES Y EFECTO KEN BURNS
              ---------------------------------------------------------------- */
           <motion.div
             key="documentary-mode"
@@ -548,8 +552,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             className="space-y-5"
           >
             <div className="relative rounded-[30px] overflow-hidden bg-ink border border-earth/30 shadow-[0_26px_70px_rgba(28,22,18,0.28)]">
-              {/* Barras superiores segmentadas 01..08 */}
-              <div className="absolute top-0 left-0 right-0 z-20 p-4 sm:p-5 bg-gradient-to-b from-ink/70 to-transparent">
+              <div className="absolute top-0 left-0 right-0 z-20 p-4 sm:p-5 bg-gradient-to-b from-ink/80 to-transparent">
                 <div className="grid grid-cols-8 gap-1.5 mb-3">
                   {STORYBOARD_SCENES.map((s, i) => {
                     const fill =
@@ -562,7 +565,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                           setActiveSceneIndex(i);
                           setDocProgress(0);
                         }}
-                        aria-label={`Saltar a escena ${s.number}`}
+                        aria-label={`Saltar a paso ${s.number}`}
                         className="h-1.5 rounded-full bg-cream/25 overflow-hidden cursor-pointer"
                       >
                         <div
@@ -577,10 +580,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 <div className="flex flex-wrap items-center justify-between gap-2 text-cream">
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-xs font-semibold tracking-wider text-peach">
-                      ESCENA {currentScene.numeral} / 08
+                      PASO {currentScene.numeral} / 08
                     </span>
                     <span className="text-xs sm:text-sm font-medium text-cream/90">
-                      {currentScene.phase}
+                      {currentScene.locationTag}
                     </span>
                   </div>
 
@@ -590,26 +593,26 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       onClick={() => speakSingleScene(activeSceneIndex)}
                       className="rounded-full bg-cream/15 backdrop-blur-md border border-cream/25 px-3.5 py-1 text-xs font-semibold text-cream hover:bg-cream/25 transition-colors cursor-pointer"
                     >
-                      {speakingIndex === activeSceneIndex ? 'Silenciar voz' : 'Escuchar voz'}
+                      {speakingIndex === activeSceneIndex ? 'Silenciar voz' : 'Narrar paso'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setDocPlaying((p) => !p)}
                       className="rounded-full bg-peach text-ink px-4 py-1 text-xs font-semibold hover:bg-peach-pale transition-colors cursor-pointer"
                     >
-                      {docPlaying ? 'Pausar avance' : 'Reanudar'}
+                      {docPlaying ? 'Pausar' : 'Reanudar'}
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Imagen con transición cruzada + efecto Ken Burns */}
-              <div className="relative aspect-video w-full overflow-hidden bg-ink">
+              <div className="relative aspect-[4/3] sm:aspect-video w-full overflow-hidden bg-ink">
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={currentScene.number}
                     src={`${baseUrl}${currentScene.imageJpg}`}
                     alt={currentScene.imageAlt}
+                    style={{ objectPosition: currentScene.objectPosition }}
                     initial={{ opacity: 0.25 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0.25 }}
@@ -620,8 +623,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                   />
                 </AnimatePresence>
 
-                {/* Subtítulo cinematográfico superpuesto */}
-                <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-ink/92 via-ink/55 to-transparent px-5 pb-5 pt-16 sm:px-10 sm:pb-8">
+                <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-ink/95 via-ink/65 to-transparent px-5 pb-5 pt-20 sm:px-10 sm:pb-8">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={currentScene.number}
@@ -631,15 +633,15 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       transition={{ duration: 0.35 }}
                       className="max-w-3xl space-y-2"
                     >
+                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-peach">
+                        ¿Qué se hace y cómo se trabaja?
+                      </p>
                       <h2 className="font-serif text-xl sm:text-3xl font-medium text-cream leading-snug">
-                        {currentScene.onScreenLines[0]}{' '}
-                        <span className="text-peach">{currentScene.onScreenLines[1]}</span>
+                        {currentScene.whatLines[0]}{' '}
+                        <span className="text-peach">{currentScene.whatLines[1]}</span>
                       </h2>
                       <p className="text-xs sm:text-base text-cream/85 leading-relaxed">
-                        <strong className="font-mono uppercase tracking-wider text-[11px] text-olive-pale mr-2">
-                          {currentScene.speaker}:
-                        </strong>
-                        {currentScene.dialogue}
+                        {currentScene.howDescription}
                       </p>
                     </motion.div>
                   </AnimatePresence>
@@ -647,7 +649,6 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               </div>
             </div>
 
-            {/* Navegación inferior del documental */}
             <div className="flex items-center justify-between gap-4">
               <button
                 type="button"
@@ -658,15 +659,15 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 }}
                 className="rounded-full bg-cream-soft border border-earth/25 px-5 py-2.5 text-xs sm:text-sm font-semibold text-ink disabled:opacity-35 hover:bg-peach-pale transition-colors cursor-pointer"
               >
-                Escena anterior
+                Paso anterior
               </button>
 
               <button
                 type="button"
-                onClick={() => setLightboxIndex(activeSceneIndex)}
+                onClick={() => openScenePhoto(currentScene, false)}
                 className="text-xs sm:text-sm font-semibold text-forest underline underline-offset-4 cursor-pointer"
               >
-                Inspeccionar lámina con zoom
+                Ver fotografía completa con zoom
               </button>
 
               <button
@@ -678,13 +679,13 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 }}
                 className="rounded-full bg-forest px-5 py-2.5 text-xs sm:text-sm font-semibold text-cream disabled:opacity-35 hover:bg-forest-dark transition-colors cursor-pointer"
               >
-                Siguiente escena
+                Siguiente paso
               </button>
             </div>
           </motion.div>
         ) : viewMode === 'carousel' ? (
           /* ----------------------------------------------------------------
-             MODO 3: CARRUSEL TÁCTIL (Embla Carousel + AnimatePresence)
+             MODO CARRUSEL TÁCTIL CON FOTOS REALES
              ---------------------------------------------------------------- */
           <motion.div
             key="carousel-view"
@@ -698,29 +699,28 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               ref={emblaRef}
             >
               <div className="flex touch-pan-y">
-                {STORYBOARD_SCENES.map((scene, idx) => (
+                {STORYBOARD_SCENES.map((scene) => (
                   <div key={scene.number} className="flex-[0_0_100%] min-w-0 relative select-none">
                     <div
-                      onClick={() => setLightboxIndex(idx)}
-                      className="relative cursor-zoom-in overflow-hidden bg-cream-deep"
+                      onClick={() => openScenePhoto(scene, false)}
+                      className="relative cursor-zoom-in overflow-hidden bg-cream-deep aspect-[4/3] sm:aspect-video"
                     >
                       <picture>
                         <source srcSet={`${baseUrl}${scene.imageWebp}`} type="image/webp" />
                         <img
                           src={`${baseUrl}${scene.imageJpg}`}
                           alt={scene.imageAlt}
-                          className="w-full h-auto aspect-video object-cover"
-                          width={1360}
-                          height={759}
+                          style={{ objectPosition: scene.objectPosition }}
+                          className="w-full h-full object-cover"
                         />
                       </picture>
-                      <div className="absolute top-4 left-4 rounded-full bg-cream-soft/90 backdrop-blur-md border border-earth/20 px-3.5 py-1">
+                      <div className="absolute top-4 left-4 rounded-full bg-cream-soft/92 backdrop-blur-md border border-earth/20 px-3.5 py-1">
                         <span className="font-mono text-xs font-semibold text-forest">
-                          ESCENA {scene.numeral} / 08
+                          {scene.numeral} · {scene.locationTag}
                         </span>
                       </div>
-                      <div className="absolute bottom-3 right-4 rounded-full bg-ink/70 backdrop-blur-xs px-3 py-1 text-[11px] font-medium text-cream">
-                        Toca para acercar con zoom
+                      <div className="absolute bottom-3 right-4 rounded-full bg-ink/75 backdrop-blur-xs px-3 py-1 text-[11px] font-medium text-cream">
+                        Toca para ver foto completa
                       </div>
                     </div>
                   </div>
@@ -735,11 +735,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 disabled={activeSceneIndex === 0}
                 className="rounded-full bg-cream-soft border border-earth/25 px-5 py-2.5 text-xs sm:text-sm font-semibold text-ink disabled:opacity-35 hover:bg-peach-pale transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
-                Escena anterior
+                Anterior
               </button>
 
               <span className="font-mono text-xs sm:text-sm text-ink-muted">
-                Desliza horizontalmente · {currentScene.numeral} de 08
+                Desliza con el dedo · {currentScene.numeral} de 08
               </span>
 
               <button
@@ -748,7 +748,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 disabled={activeSceneIndex === STORYBOARD_SCENES.length - 1}
                 className="rounded-full bg-forest px-5 py-2.5 text-xs sm:text-sm font-semibold text-cream disabled:opacity-35 hover:bg-forest-dark transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
-                Siguiente escena
+                Siguiente
               </button>
             </div>
 
@@ -782,7 +782,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                   >
                     <AudioWave active={speakingIndex === activeSceneIndex} />
                     <span>
-                      {speakingIndex === activeSceneIndex ? 'Detener voz' : 'Escuchar escena'}
+                      {speakingIndex === activeSceneIndex ? 'Detener voz' : 'Escuchar paso'}
                     </span>
                   </button>
                 </div>
@@ -790,21 +790,19 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="rounded-2xl bg-gradient-to-br from-peach-pale/80 to-cream p-5 border border-earth/20">
                     <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth mb-1.5">
-                      Texto en pantalla
+                      ¿Qué se está haciendo?
                     </p>
                     <p className="font-serif text-lg sm:text-xl font-medium text-ink leading-snug">
-                      {currentScene.onScreenLines[0]}
-                      <br />
-                      {currentScene.onScreenLines[1]}
+                      {currentScene.whatLines[0]} {currentScene.whatLines[1]}
                     </p>
                   </div>
 
-                  <div className="rounded-2xl bg-olive-pale/45 p-5 border border-olive/30">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest mb-1.5">
-                      {currentScene.speaker}
+                  <div className="rounded-2xl bg-olive-pale/45 p-5 border border-olive/30 space-y-2">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest">
+                      ¿Cómo se está haciendo?
                     </p>
                     <p className="text-sm sm:text-base text-ink-soft leading-relaxed">
-                      {currentScene.dialogue}
+                      {currentScene.howDescription}
                     </p>
                   </div>
                 </div>
@@ -813,10 +811,9 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
           </motion.div>
         ) : (
           /* ----------------------------------------------------------------
-             MODO 1 & 4: RECORRIDO INMERSIVO CON HILO CONDUCTOR GSAP / GUION COMPLETO
+             MODO 1 & 4: PASO A PASO REAL EN CAMPO / FICHA COMPLETA
              ---------------------------------------------------------------- */
           <div ref={editorialListRef} className="relative">
-            {/* Espina dorsal topográfica animada con GSAP ScrollTrigger */}
             <div
               className="hidden lg:block absolute left-1/2 top-8 bottom-8 w-px bg-earth/15 -translate-x-1/2 pointer-events-none no-print"
               aria-hidden="true"
@@ -829,6 +826,18 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 const isReversed = index % 2 === 1 && viewMode === 'editorial';
                 const isTechExpanded =
                   viewMode === 'technical' || Boolean(openTechMap[scene.number]);
+                const showSecondary = Boolean(secondaryActiveMap[scene.number] && scene.secondaryPhoto);
+                const activeWebp =
+                  showSecondary && scene.secondaryPhoto ? scene.secondaryPhoto.webp : scene.imageWebp;
+                const activeJpg =
+                  showSecondary && scene.secondaryPhoto ? scene.secondaryPhoto.jpg : scene.imageJpg;
+                const activeAlt =
+                  showSecondary && scene.secondaryPhoto ? scene.secondaryPhoto.alt : scene.imageAlt;
+                const activePos =
+                  showSecondary && scene.secondaryPhoto
+                    ? scene.secondaryPhoto.objectPosition
+                    : scene.objectPosition;
+
                 const accent = ACCENT_STYLES[scene.accent];
                 const isSpeakingThis = speakingIndex === index;
 
@@ -845,48 +854,86 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       className="scroll-mt-36 rounded-[30px] bg-cream-soft/95 backdrop-blur-xs border border-earth/20 shadow-[0_16px_45px_rgba(70,45,25,0.07)] overflow-hidden p-4 sm:p-6 lg:p-8"
                     >
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
-                        {/* Lámina con parallax GSAP + inclinación 3D TiltPlate */}
+                        {/* Columna de fotografía real en campo */}
                         <div
-                          className={`lg:col-span-7 ${
+                          className={`lg:col-span-6 space-y-3 ${
                             isReversed ? 'lg:order-2' : 'lg:order-1'
                           }`}
                         >
                           <TiltPlate
-                            maxTilt={4}
-                            onClick={() => setLightboxIndex(index)}
-                            ariaLabel={`Inspeccionar con zoom la lámina de la escena ${scene.number}: ${scene.title}`}
+                            maxTilt={3.8}
+                            onClick={() => openScenePhoto(scene, showSecondary)}
+                            ariaLabel={`Ampliar fotografía real del paso ${scene.number}: ${scene.title}`}
                             className="group overflow-hidden rounded-[22px] border border-earth/20 bg-cream-deep cursor-zoom-in"
                           >
-                            <div className="overflow-hidden aspect-video">
+                            <div className="overflow-hidden aspect-[4/3]">
                               <picture>
-                                <source
-                                  srcSet={`${baseUrl}${scene.imageWebp}`}
-                                  type="image/webp"
-                                />
+                                <source srcSet={`${baseUrl}${activeWebp}`} type="image/webp" />
                                 <img
-                                  src={`${baseUrl}${scene.imageJpg}`}
-                                  alt={scene.imageAlt}
+                                  src={`${baseUrl}${activeJpg}`}
+                                  alt={activeAlt}
                                   loading={index === 0 ? 'eager' : 'lazy'}
-                                  width={1360}
-                                  height={759}
+                                  style={{ objectPosition: activePos }}
                                   className="gsap-parallax-img w-full h-full object-cover will-change-transform"
                                 />
                               </picture>
                             </div>
-                            <div className="absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-4 no-print">
-                              <span className="font-mono text-[11px] text-cream/90 uppercase tracking-wider">
-                                Escena {scene.numeral}
+
+                            {/* Etiqueta de ubicación real sobre la foto */}
+                            <div className="absolute top-3.5 left-3.5 rounded-full bg-cream-soft/90 backdrop-blur-md border border-earth/20 px-3 py-1">
+                              <span className="font-mono text-[10.5px] font-semibold text-ink">
+                                {scene.locationTag}
                               </span>
+                            </div>
+
+                            <div className="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4 no-print">
                               <span className="rounded-full bg-cream-soft/95 px-3.5 py-1 text-xs font-semibold text-ink shadow-sm">
-                                Inspeccionar con zoom
+                                Ver foto completa con zoom
                               </span>
                             </div>
                           </TiltPlate>
+
+                          {/* Selector de segunda fotografía real cuando el paso tiene 2 evidencias */}
+                          {scene.secondaryPhoto && (
+                            <div className="flex items-center justify-between gap-2 px-1 no-print">
+                              <span className="font-mono text-[11px] text-ink-muted">
+                                2 registros reales en esta etapa:
+                              </span>
+                              <div className="inline-flex rounded-full bg-cream-deep/75 p-0.5 border border-earth/15">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSecondaryActiveMap((m) => ({ ...m, [scene.number]: false }))
+                                  }
+                                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
+                                    !showSecondary
+                                      ? 'bg-forest text-cream'
+                                      : 'text-ink-soft hover:text-ink'
+                                  }`}
+                                >
+                                  Foto 01
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSecondaryActiveMap((m) => ({ ...m, [scene.number]: true }))
+                                  }
+                                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
+                                    showSecondary
+                                      ? 'bg-forest text-cream'
+                                      : 'text-ink-soft hover:text-ink'
+                                  }`}
+                                >
+                                  Foto 02 · {scene.secondaryPhoto.label}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Contenido narrativo */}
+                        {/* Columna explicativa clara: ¿Qué se hace? y ¿Cómo se hace? */}
                         <div
-                          className={`lg:col-span-5 space-y-5 ${
+                          className={`lg:col-span-6 space-y-4 ${
                             isReversed ? 'lg:order-1' : 'lg:order-2'
                           }`}
                         >
@@ -916,43 +963,53 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                             </button>
                           </div>
 
-                          <h2 className="font-serif text-2xl sm:text-[1.78rem] font-semibold leading-tight text-ink">
+                          <h2 className="font-serif text-2xl sm:text-[1.72rem] font-semibold leading-tight text-ink">
                             {scene.title}
                           </h2>
 
+                          {/* Bloque 1: ¿Qué se está haciendo? */}
                           <div
                             className={`rounded-2xl bg-gradient-to-br ${accent.cardTint} border border-earth/20 p-4 sm:p-5`}
                           >
-                            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth mb-1.5">
-                              Texto en pantalla
+                            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth font-semibold mb-1">
+                              ¿Qué se está haciendo?
                             </p>
                             <p className="font-serif text-base sm:text-lg font-medium text-ink leading-snug">
-                              {scene.onScreenLines[0]}
+                              {scene.whatLines[0]}
                               <br />
-                              {scene.onScreenLines[1]}
+                              {scene.whatLines[1]}
                             </p>
                           </div>
 
-                          <div className="relative pl-4 border-l-2 border-olive space-y-1">
-                            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-forest font-medium">
-                              {scene.speaker}
+                          {/* Bloque 2: ¿Cómo se está haciendo en la práctica? */}
+                          <div className="rounded-2xl bg-olive-pale/45 border border-olive/30 p-4 sm:p-5 space-y-2">
+                            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest font-semibold">
+                              ¿Cómo se está haciendo?
                             </p>
-                            <p className="text-sm sm:text-[15.5px] text-ink-soft leading-relaxed">
+                            <p className="text-sm sm:text-[15px] text-ink leading-relaxed">
+                              {scene.howDescription}
+                            </p>
+                            <p className="text-xs sm:text-sm italic text-ink-soft pt-1 border-t border-olive/20">
                               {scene.dialogue}
                             </p>
                           </div>
 
                           {viewMode === 'editorial' && (
-                            <div className="pt-1 no-print">
+                            <div className="pt-0.5 no-print">
                               <button
                                 type="button"
-                                onClick={() => toggleTechSpec(scene.number)}
+                                onClick={() =>
+                                  setOpenTechMap((prev) => ({
+                                    ...prev,
+                                    [scene.number]: !prev[scene.number],
+                                  }))
+                                }
                                 aria-expanded={isTechExpanded}
                                 className="text-xs font-semibold text-earth hover:text-forest transition-colors underline decoration-earth/35 underline-offset-4 cursor-pointer"
                               >
                                 {isTechExpanded
-                                  ? 'Ocultar ficha de dirección visual'
-                                  : 'Desplegar descripción visual y transición'}
+                                  ? 'Ocultar detalle documental de fotografía'
+                                  : 'Ver descripción de evidencia fotográfica y secuencia'}
                               </button>
                             </div>
                           )}
@@ -971,7 +1028,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                             <div className="mt-6 pt-6 border-t border-earth/15 grid grid-cols-1 md:grid-cols-12 gap-5 text-sm">
                               <div className="md:col-span-8 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
                                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest font-medium">
-                                  Descripción visual detallada (encuadre, personajes, entorno y emociones)
+                                  Evidencia fotográfica real en campo
                                 </p>
                                 <p className="text-ink-soft leading-relaxed">
                                   {scene.visualDescription}
@@ -980,7 +1037,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
                               <div className="md:col-span-4 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
                                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth font-medium">
-                                  Ritmo y transición visual
+                                  Continuidad del proceso
                                 </p>
                                 <p className="text-ink-soft leading-relaxed">
                                   {scene.transitionNote}
@@ -1000,20 +1057,20 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       </div>
 
       {/* ====================================================================
-         INSPECTOR DE ALTA DEFINICIÓN CON PINCH-TO-ZOOM Y PANEO (react-zoom-pan-pinch)
+         INSPECTOR DE FOTOGRAFÍA COMPLETA SIN RECORTE CON ZOOM Y PANEO
          ==================================================================== */}
       <AnimatePresence>
-        {lightboxScene && lightboxIndex !== null && (
+        {lightboxMedia && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24 }}
-            onClick={() => setLightboxIndex(null)}
-            className="fixed inset-0 z-50 bg-ink/88 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 no-print"
+            onClick={() => setLightboxMedia(null)}
+            className="fixed inset-0 z-50 bg-ink/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 no-print"
             role="dialog"
             aria-modal="true"
-            aria-label={`Inspector de lámina: Escena ${lightboxScene.number}`}
+            aria-label={lightboxMedia.label}
           >
             <motion.div
               initial={{ scale: 0.94, opacity: 0, y: 14 }}
@@ -1026,21 +1083,16 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               <TransformWrapper
                 initialScale={1}
                 minScale={1}
-                maxScale={3.5}
+                maxScale={4}
                 centerOnInit
-                key={lightboxScene.number}
+                key={lightboxMedia.jpg}
               >
                 {({ zoomIn, zoomOut, resetTransform }) => (
                   <>
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-earth/15">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="font-mono text-xs font-semibold text-forest shrink-0">
-                          ESCENA {lightboxScene.numeral} / 08
-                        </span>
-                        <span className="text-xs sm:text-sm font-semibold text-ink truncate">
-                          {lightboxScene.title}
-                        </span>
-                      </div>
+                      <span className="font-mono text-xs font-semibold text-forest truncate">
+                        {lightboxMedia.label}
+                      </span>
 
                       <div className="flex items-center gap-1.5">
                         <button
@@ -1066,7 +1118,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                         </button>
                         <button
                           type="button"
-                          onClick={() => setLightboxIndex(null)}
+                          onClick={() => setLightboxMedia(null)}
                           className="rounded-full bg-forest px-4 py-1 text-xs font-semibold text-cream hover:bg-forest-dark ml-1 cursor-pointer"
                         >
                           Cerrar
@@ -1074,45 +1126,23 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       </div>
                     </div>
 
-                    <div className="bg-cream-deep cursor-grab active:cursor-grabbing overflow-hidden flex items-center justify-center">
+                    <div className="bg-ink/95 cursor-grab active:cursor-grabbing overflow-hidden flex items-center justify-center">
                       <TransformComponent
-                        wrapperStyle={{ width: '100%', maxHeight: '70vh' }}
+                        wrapperStyle={{ width: '100%', maxHeight: '72vh' }}
                         contentStyle={{ width: '100%' }}
                       >
                         <img
-                          src={`${baseUrl}${lightboxScene.imageJpg}`}
-                          alt={lightboxScene.imageAlt}
-                          className="w-full max-h-[70vh] object-contain mx-auto select-none"
+                          src={lightboxMedia.jpg}
+                          alt={lightboxMedia.alt}
+                          className="w-full max-h-[72vh] object-contain mx-auto select-none"
                         />
                       </TransformComponent>
                     </div>
 
-                    <div className="px-5 py-3.5 bg-cream-soft border-t border-earth/15 flex flex-wrap items-center justify-between gap-3">
-                      <button
-                        type="button"
-                        disabled={lightboxIndex === 0}
-                        onClick={() => setLightboxIndex((i) => (i !== null ? Math.max(0, i - 1) : 0))}
-                        className="text-xs font-semibold text-ink disabled:opacity-35 hover:text-forest cursor-pointer"
-                      >
-                        Anterior lámina
-                      </button>
-
-                      <p className="font-serif text-sm sm:text-base text-ink text-center flex-1">
-                        {lightboxScene.onScreenLines.join(' ')}
+                    <div className="px-5 py-3.5 bg-cream-soft border-t border-earth/15 text-center">
+                      <p className="font-serif text-sm sm:text-base text-ink">
+                        {lightboxMedia.subtitle}
                       </p>
-
-                      <button
-                        type="button"
-                        disabled={lightboxIndex === STORYBOARD_SCENES.length - 1}
-                        onClick={() =>
-                          setLightboxIndex((i) =>
-                            i !== null ? Math.min(STORYBOARD_SCENES.length - 1, i + 1) : 0
-                          )
-                        }
-                        className="text-xs font-semibold text-ink disabled:opacity-35 hover:text-forest cursor-pointer"
-                      >
-                        Siguiente lámina
-                      </button>
                     </div>
                   </>
                 )}
