@@ -5,7 +5,6 @@ import {
   MotionConfig,
   useMotionTemplate,
   useScroll,
-  useSpring,
   useTransform,
 } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -17,6 +16,8 @@ import { STORYBOARD_SCENES, type StoryboardScene } from '../data/storyboard';
 import { soundscape } from '../utils/soundscape';
 import AudioWave from './AudioWave';
 import TiltPlate from './TiltPlate';
+import { BlurFade } from '@/components/ui/blur-fade';
+import { EASE_OUT_EXPO, STAGGER } from '@/lib/motion';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -54,6 +55,13 @@ const ACCENT_STYLES: Record<
     cardTint: 'from-olive-pale/50 to-cream-soft',
   },
 };
+
+const VIEW_MODES: ReadonlyArray<{ id: ViewMode; label: string }> = [
+  { id: 'technical', label: 'Ficha Completa' },
+  { id: 'editorial', label: 'Recorrido en campo' },
+  { id: 'documentary', label: 'Modo Documental' },
+  { id: 'carousel', label: 'Carrusel Táctil' },
+];
 
 const getPhaseLabel = (phase: string) => {
   const stageNumber = phase.match(/Etapa (\d+) de \d+/)?.[1];
@@ -102,12 +110,34 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
   );
   const horizontalTransform = useMotionTemplate`translateX(${horizontalOffset}px)`;
 
+  const scrollWithLenis = useCallback(
+    (target: number | string | HTMLElement, options?: { offset?: number; immediate?: boolean }) => {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        if (typeof target === 'number') {
+          window.scrollTo({ top: target + (options?.offset ?? 0), behavior: 'auto' });
+        } else {
+          const el =
+            typeof target === 'string' ? document.querySelector<HTMLElement>(target) : target;
+          el?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+        return;
+      }
+      window.dispatchEvent(
+        new CustomEvent('uiep:lenis-scroll', {
+          detail: { target, offset: options?.offset ?? 0, immediate: Boolean(options?.immediate) },
+        })
+      );
+    },
+    []
+  );
+
   const scrollToEditorialScene = useCallback(
     (index: number) => {
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const behavior = prefersReduced ? 'auto' : 'smooth';
 
-      if (prefersReduced || window.innerHeight <= 620) {
+      if (prefersReduced || window.innerHeight <= 640 || window.innerWidth <= 767) {
         const target = fieldTrackRef.current?.children.item(index);
         target?.scrollIntoView({ behavior, block: 'nearest', inline: 'center' });
         return;
@@ -119,20 +149,10 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       const progress = index / (STORYBOARD_SCENES.length - 1);
       const top =
         window.scrollY + container.getBoundingClientRect().top + horizontalDistance * progress;
-      window.scrollTo({ top, behavior });
+      scrollWithLenis(top);
     },
-    [horizontalDistance]
+    [horizontalDistance, scrollWithLenis]
   );
-
-  const scaleX = useSpring(0, {
-    stiffness: 120,
-    damping: 28,
-    restDelta: 0.001,
-  });
-
-  useEffect(() => {
-    scaleX.set(activeSceneIndex / (STORYBOARD_SCENES.length - 1));
-  }, [activeSceneIndex, scaleX]);
 
   useEffect(() => {
     if (viewMode !== 'editorial') {
@@ -209,11 +229,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       images.forEach((img) => {
         gsap.fromTo(
           img,
-          { scale: 1.1, yPercent: -3, filter: 'blur(3px)', opacity: 0.78 },
+          // Sin desenfoque: en fotografías documentales el blur se percibe como "carga fallida"
+          { scale: 1.1, yPercent: -3, opacity: 0.88 },
           {
             scale: 1.02,
             yPercent: 2,
-            filter: 'blur(0px)',
             opacity: 1,
             ease: 'none',
             scrollTrigger: {
@@ -265,21 +285,24 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     { dependencies: [viewMode], scope: editorialListRef }
   );
 
+  const carouselStartRef = useRef(0);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
     align: 'center',
     skipSnaps: false,
+    startIndex: carouselStartRef.current,
   });
 
   const onEmblaSelect = useCallback(() => {
-    if (!emblaApi) return;
+    if (!emblaApi || viewMode !== 'carousel') return;
     const snap = emblaApi.selectedScrollSnap();
     setActiveSceneIndex(snap);
     if (ambientOn) soundscape.playHarmonicNote(snap);
-  }, [emblaApi, ambientOn]);
+  }, [emblaApi, viewMode, ambientOn]);
 
   useEffect(() => {
-    if (!emblaApi) return;
+    if (!emblaApi || viewMode !== 'carousel') return;
+    emblaApi.scrollTo(carouselStartRef.current, true);
     onEmblaSelect();
     emblaApi.on('select', onEmblaSelect);
     emblaApi.on('reInit', onEmblaSelect);
@@ -287,7 +310,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       emblaApi.off('select', onEmblaSelect);
       emblaApi.off('reInit', onEmblaSelect);
     };
-  }, [emblaApi, onEmblaSelect]);
+  }, [emblaApi, viewMode, onEmblaSelect]);
 
   // Escuchar eventos desde el Mapa Territorial o el Archivo Fotográfico
   useEffect(() => {
@@ -296,16 +319,14 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       const idx = (custom.detail?.sceneNumber ?? 1) - 1;
       if (idx >= 0 && idx < STORYBOARD_SCENES.length) {
         if (viewMode === 'carousel' || viewMode === 'documentary') {
+          carouselStartRef.current = idx;
           setActiveSceneIndex(idx);
           emblaApi?.scrollTo(idx);
-          document.getElementById('relato-interactivo')?.scrollIntoView({ behavior: 'smooth' });
+          scrollWithLenis('#relato-interactivo', { offset: -8 });
         } else if (viewMode === 'editorial') {
           scrollToEditorialScene(idx);
         } else {
-          document.getElementById(`escena-${idx + 1}`)?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          });
+          scrollWithLenis(`#escena-${idx + 1}`, { offset: -84 });
         }
       }
     };
@@ -326,7 +347,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
       window.removeEventListener('uiep:goto-scene', gotoHandler);
       window.removeEventListener('uiep:open-photo', lightboxHandler);
     };
-  }, [viewMode, emblaApi, openLightbox, scrollToEditorialScene]);
+  }, [viewMode, emblaApi, openLightbox, scrollToEditorialScene, scrollWithLenis]);
 
   useEffect(() => {
     if (viewMode === 'carousel' || viewMode === 'documentary' || !('IntersectionObserver' in window))
@@ -542,20 +563,31 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
     }
     const target = document.getElementById(`escena-${index + 1}`);
     if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrollWithLenis(target, { offset: -84 });
     }
   };
 
   const handleModeSwitch = (mode: ViewMode) => {
     stopSpeech();
+    setControlsOpen(false);
+    carouselStartRef.current = activeSceneIndex;
     setViewMode(mode);
+
     if (mode === 'editorial') {
       setActiveSceneIndex(0);
       requestAnimationFrame(() => scrollToEditorialScene(0));
-    }
-    if (mode === 'documentary') {
-      setDocPlaying(true);
-      setDocProgress(0);
+    } else {
+      if (mode === 'documentary') {
+        setDocPlaying(true);
+        setDocProgress(0);
+      }
+      requestAnimationFrame(() => {
+        const section = document.getElementById('relato-interactivo');
+        if (section && section.getBoundingClientRect().top < -24) {
+          scrollWithLenis(section, { offset: -8, immediate: true });
+        }
+        ScrollTrigger.refresh();
+      });
     }
     if (ambientOn) soundscape.playHarmonicNote(activeSceneIndex);
   };
@@ -612,185 +644,262 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
   return (
     <MotionConfig reducedMotion="user">
-    <section id="relato-interactivo" className="relative pb-20">
-      <div
-        role="progressbar"
-        aria-label="Avance de tarjetas"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round((activeSceneIndex / (STORYBOARD_SCENES.length - 1)) * 100)}
-        aria-orientation="vertical"
-        className="fixed left-2 sm:left-4 top-1/2 z-[60] h-36 sm:h-44 w-1 -translate-y-1/2 overflow-hidden rounded-full bg-earth/15 no-print"
-      >
-        <motion.div
-          style={{ scaleY: scaleX }}
-          className="h-full origin-top bg-gradient-to-b from-forest via-olive to-terracotta"
-        />
-      </div>
-
-      {/* DOCK FLOTANTE DE NAVEGACIÓN Y ACCESIBILIDAD */}
-      <div className="relative sm:sticky sm:top-2 z-40 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 mb-3 sm:mb-5 no-print">
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setControlsOpen((open) => !open)}
-            aria-label={controlsOpen ? 'Ocultar opciones' : 'Mostrar opciones'}
-            aria-expanded={controlsOpen}
-            aria-controls="mobile-story-controls"
-            title={controlsOpen ? 'Ocultar opciones' : 'Mostrar opciones'}
-            className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full border border-earth/15 bg-cream-soft/85 text-ink-muted shadow-sm backdrop-blur-md transition-colors hover:bg-cream-deep/70 hover:text-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
-            >
-              <path d="M4 6h16M4 12h16M4 18h16" />
-              <circle cx="16" cy="6" r="2.2" fill="var(--color-cream-soft)" />
-              <circle cx="8" cy="12" r="2.2" fill="var(--color-cream-soft)" />
-              <circle cx="13" cy="18" r="2.2" fill="var(--color-cream-soft)" />
-            </svg>
-          </button>
-        </div>
-
-        <div
-          id="mobile-story-controls"
-          className={`${controlsOpen ? 'mt-2 flex rounded-2xl border border-earth/20 bg-cream-soft/95 p-3 shadow-[0_12px_34px_rgba(55,35,18,0.12)] backdrop-blur-xl' : 'hidden'} flex-wrap items-center justify-between gap-2.5`}
-        >
-            <div
-              className="inline-flex flex-wrap items-center rounded-full bg-cream-deep/70 p-1 border border-earth/15"
-              role="tablist"
-              aria-label="Modo de visualización del proceso"
-              onKeyDown={handleViewModeKeyDown}
-            >
-              {(
-                [
-                  { id: 'technical', label: 'Ficha Completa' },
-                  { id: 'editorial', label: 'Recorrido en campo' },
-                  { id: 'documentary', label: 'Modo Documental' },
-                  { id: 'carousel', label: 'Carrusel Táctil' },
-                ] as const
-              ).map((tab) => {
-                const active = viewMode === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    id={`story-view-tab-${tab.id}`}
-                    aria-controls="story-view-panel"
-                    aria-selected={active}
-                    tabIndex={active ? 0 : -1}
-                    onClick={() => handleModeSwitch(tab.id)}
-                    className={`relative px-3 sm:px-3.5 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
-                      active ? 'text-cream' : 'text-ink-soft hover:text-ink'
-                    }`}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="activeViewModePill"
-                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                        className="absolute inset-0 rounded-full bg-forest shadow-xs"
-                      />
-                    )}
-                    <span className="relative z-10">{tab.label}</span>
-                  </button>
-                );
-              })}
+    <section id="relato-interactivo" className="relative pb-20 scroll-mt-4">
+      {/* INTRODUCCIÓN DE SECCIÓN (oculta en Recorrido en campo para no duplicar su cabecera fija) */}
+      {viewMode !== 'editorial' && (
+        <header className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-5 sm:pb-7">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl space-y-2">
+              <BlurFade inView delay={0}>
+                <p className="font-mono text-xs uppercase tracking-[0.16em] text-earth font-medium">
+                  El proceso, paso a paso
+                </p>
+              </BlurFade>
+              <BlurFade inView delay={STAGGER}>
+                <h2 className="font-serif text-3xl sm:text-5xl font-semibold text-ink leading-[1.06] tracking-[-0.02em] [text-wrap:balance]">
+                  De la escucha en campo a{' '}
+                  <span className="italic font-medium text-forest">propuestas compartidas</span>
+                </h2>
+              </BlurFade>
             </div>
+            <BlurFade inView delay={STAGGER * 2}>
+              <p className="text-xs sm:text-sm text-ink-muted max-w-xs leading-relaxed">
+                Ocho tarjetas con evidencia real en territorio y cuatro modos para explorarlas a tu ritmo.
+              </p>
+            </BlurFade>
+          </div>
+        </header>
+      )}
 
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <button
-                type="button"
-                onClick={toggleSpeakAll}
-                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all cursor-pointer ${
-                  isPlayingAll
-                    ? 'bg-terracotta text-cream border-terracotta'
-                    : 'bg-cream text-ink border-earth/25 hover:border-forest/50'
-                }`}
-              >
-                <AudioWave active={isPlayingAll} light={isPlayingAll} />
-                <span>{isPlayingAll ? 'Detener voz' : 'Escuchar explicación'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleToggleAmbient}
-                aria-pressed={ambientOn}
-                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors cursor-pointer ${
-                  ambientOn
-                    ? 'bg-olive-pale text-forest border-olive font-semibold'
-                    : 'bg-cream text-ink-soft border-earth/20 hover:text-ink'
-                }`}
-              >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    ambientOn ? 'bg-forest animate-ping' : 'bg-earth/45'
-                  }`}
-                  aria-hidden="true"
-                />
-                <span>Ambiente sonoro</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={toggleComfortReading}
-                aria-pressed={comfortReading}
-                className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium border transition-colors cursor-pointer ${
-                  comfortReading
-                    ? 'bg-peach/70 text-ink border-earth/45 font-semibold'
-                    : 'bg-cream text-ink-soft border-earth/20 hover:text-ink'
-                }`}
-              >
-                {comfortReading ? 'Texto estándar' : 'Lectura amplia'}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="hidden lg:inline-flex items-center rounded-full bg-cream px-3 py-1.5 text-xs font-medium text-ink-soft border border-earth/20 hover:text-ink transition-colors cursor-pointer"
-              >
-                Guardar PDF
-              </button>
-            </div>
+      {/* BARRA ADHERENTE DE MODOS, PROGRESO Y ACCESIBILIDAD */}
+      <div className="sticky top-2.5 z-40 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 mb-4 sm:mb-6 no-print">
+        <div className="flex items-center justify-between gap-2 rounded-full border border-earth/20 bg-cream-soft/92 px-2.5 py-1.5 shadow-[0_10px_28px_rgba(55,35,18,0.08)] backdrop-blur-xl">
+          {/* Indicador compacto de ubicación actual */}
+          <div className="flex items-center gap-2 pl-2 min-w-0">
+            <span className="font-mono text-[11px] font-semibold text-forest tabular-nums shrink-0">
+              {currentScene.numeral}/{String(STORYBOARD_SCENES.length).padStart(2, '0')}
+            </span>
+            <span className="h-3.5 w-px bg-earth/20 shrink-0" aria-hidden="true" />
+            <span className="truncate text-xs font-medium text-ink-soft md:max-w-[9rem] lg:max-w-none">
+              <span className="md:hidden">
+                {VIEW_MODES.find((m) => m.id === viewMode)?.label}
+              </span>
+              <span className="hidden md:inline">{getPhaseLabel(currentScene.phase)}</span>
+            </span>
           </div>
 
+          {/* Selector directo de modos en pantallas medianas y grandes */}
           <div
-            className={`${controlsOpen ? 'flex' : 'hidden'} items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5`}
+            className="hidden md:inline-flex items-center rounded-full bg-cream-deep/70 p-1 border border-earth/15"
+            role="tablist"
+            aria-label="Modo de visualización del proceso"
+            onKeyDown={handleViewModeKeyDown}
           >
-            {STORYBOARD_SCENES.map((scene, idx) => {
-              const isCurrent = activeSceneIndex === idx;
+            {VIEW_MODES.map((tab) => {
+              const active = viewMode === tab.id;
               return (
                 <button
-                  key={scene.number}
+                  key={tab.id}
                   type="button"
-                  onClick={() => jumpToScene(idx)}
-                  className={`relative shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-                    isCurrent ? 'text-ink font-semibold' : 'text-ink-muted hover:text-ink'
+                  role="tab"
+                  id={`story-view-tab-${tab.id}`}
+                  aria-controls="story-view-panel"
+                  aria-selected={active}
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => handleModeSwitch(tab.id)}
+                  className={`relative px-3 lg:px-3.5 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer ${
+                    active ? 'text-cream' : 'text-ink-soft hover:text-ink'
                   }`}
                 >
-                  {isCurrent && (
+                  {active && (
                     <motion.span
-                      layoutId="activeSceneScrubber"
-                      transition={{ type: 'spring', stiffness: 400, damping: 34 }}
-                      className="absolute inset-0 rounded-full bg-peach/65 border border-earth/25"
+                      layoutId="activeViewModePillDesktop"
+                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                      className="absolute inset-0 rounded-full bg-forest shadow-xs"
                     />
                   )}
-                  <span className="relative z-10 font-mono mr-1.5 text-[11px]">
-                    TARJETA {scene.numeral}
-                  </span>
-                  <span className="relative z-10 hidden md:inline">
-                    {getPhaseLabel(scene.phase)}
-                  </span>
+                  <span className="relative z-10">{tab.label}</span>
                 </button>
               );
             })}
+          </div>
+
+          {/* Acciones rápidas: voz + cajón de opciones y salto rápido */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={toggleSpeakAll}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border transition-colors cursor-pointer ${
+                isPlayingAll
+                  ? 'bg-terracotta text-cream border-terracotta'
+                  : 'bg-cream text-ink border-earth/25 hover:border-forest/50'
+              }`}
+            >
+              <AudioWave active={isPlayingAll} light={isPlayingAll} />
+              <span className="hidden sm:inline">
+                {isPlayingAll ? 'Detener' : 'Escuchar'}
+              </span>
+              <span className="sr-only sm:hidden">
+                {isPlayingAll ? 'Detener explicación por voz' : 'Escuchar explicación por voz'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setControlsOpen((open) => !open)}
+              aria-label={controlsOpen ? 'Ocultar herramientas y tarjetas' : 'Mostrar herramientas y tarjetas'}
+              aria-expanded={controlsOpen}
+              aria-controls="mobile-story-controls"
+              className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors duration-300 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest ${
+                controlsOpen
+                  ? 'border-forest bg-forest text-cream'
+                  : 'border-earth/20 bg-cream text-ink-soft hover:bg-cream-deep/70 hover:text-forest'
+              }`}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`h-4 w-4 transition-transform duration-500 ease-out-expo ${controlsOpen ? 'rotate-90' : ''}`}
+              >
+                <path d="M4 6h16M4 12h16M4 18h16" />
+                <circle cx="16" cy="6" r="2.1" fill="currentColor" />
+                <circle cx="8" cy="12" r="2.1" fill="currentColor" />
+                <circle cx="13" cy="18" r="2.1" fill="currentColor" />
+              </svg>
+              <span className="md:hidden">Modos</span>
+              <span className="hidden md:inline">Tarjetas</span>
+            </button>
+          </div>
         </div>
+
+        <AnimatePresence initial={false}>
+          {controlsOpen && (
+            <motion.div
+              key="story-controls"
+              id="mobile-story-controls"
+              initial={{ opacity: 0, y: -8, scale: 0.98, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -6, scale: 0.98, filter: 'blur(4px)' }}
+              transition={{ duration: 0.28, ease: EASE_OUT_EXPO }}
+              style={{ transformOrigin: 'top right' }}
+              className="mt-2 rounded-inner border border-earth/20 bg-cream-soft/96 p-3 shadow-[0_14px_36px_rgba(55,35,18,0.12)] backdrop-blur-xl space-y-2.5"
+            >
+              {/* Modos en móvil */}
+              <div
+                className="flex md:hidden flex-wrap items-center gap-1 rounded-2xl bg-cream-deep/70 p-1 border border-earth/15"
+                role="tablist"
+                aria-label="Modo de visualización del proceso"
+                onKeyDown={handleViewModeKeyDown}
+              >
+                {VIEW_MODES.map((tab) => {
+                  const active = viewMode === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-controls="story-view-panel"
+                      aria-selected={active}
+                      tabIndex={active ? 0 : -1}
+                      onClick={() => handleModeSwitch(tab.id)}
+                      className={`relative flex-1 min-w-[46%] px-3 py-1.5 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
+                        active ? 'text-cream' : 'text-ink-soft hover:text-ink'
+                      }`}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="activeViewModePillMobile"
+                          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                          className="absolute inset-0 rounded-xl bg-forest shadow-xs"
+                        />
+                      )}
+                      <span className="relative z-10">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleAmbient}
+                    aria-pressed={ambientOn}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors cursor-pointer ${
+                      ambientOn
+                        ? 'bg-olive-pale text-forest border-olive font-semibold'
+                        : 'bg-cream text-ink-soft border-earth/20 hover:text-ink'
+                    }`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        ambientOn ? 'bg-forest animate-ping' : 'bg-earth/45'
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span>Ambiente sonoro</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={toggleComfortReading}
+                    aria-pressed={comfortReading}
+                    className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium border transition-colors cursor-pointer ${
+                      comfortReading
+                        ? 'bg-peach/70 text-ink border-earth/45 font-semibold'
+                        : 'bg-cream text-ink-soft border-earth/20 hover:text-ink'
+                    }`}
+                  >
+                    {comfortReading ? 'Texto estándar' : 'Lectura amplia'}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="hidden lg:inline-flex items-center rounded-full bg-cream px-3 py-1.5 text-xs font-medium text-ink-soft border border-earth/20 hover:text-ink transition-colors cursor-pointer"
+                >
+                  Guardar PDF
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-earth/10">
+                {STORYBOARD_SCENES.map((scene, idx) => {
+                  const isCurrent = activeSceneIndex === idx;
+                  return (
+                    <button
+                      key={scene.number}
+                      type="button"
+                      onClick={() => jumpToScene(idx)}
+                      className={`relative shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                        isCurrent ? 'text-ink font-semibold' : 'text-ink-muted hover:text-ink'
+                      }`}
+                    >
+                      {isCurrent && (
+                        <motion.span
+                          layoutId="activeSceneScrubber"
+                          transition={{ type: 'spring', stiffness: 400, damping: 34 }}
+                          className="absolute inset-0 rounded-full bg-peach/65 border border-earth/25"
+                        />
+                      )}
+                      <span className="relative z-10 font-mono mr-1.5 text-[11px]">
+                        TARJETA {scene.numeral}
+                      </span>
+                      <span className="relative z-10 hidden md:inline">
+                        {getPhaseLabel(scene.phase)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* CONTENIDO PRINCIPAL */}
@@ -812,7 +921,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             transition={{ duration: 0.45 }}
             className="space-y-5"
           >
-            <div className="relative rounded-[30px] overflow-hidden bg-ink border border-earth/30 shadow-[0_26px_70px_rgba(28,22,18,0.28)]">
+            <div className="relative rounded-card overflow-hidden bg-ink border border-earth/30 shadow-[0_26px_70px_rgba(28,22,18,0.28)]">
               <div className="absolute top-0 left-0 right-0 z-20 p-4 sm:p-5 bg-gradient-to-b from-ink/80 to-transparent">
                 <div className="grid grid-cols-8 gap-1.5 mb-3">
                   {STORYBOARD_SCENES.map((s, i) => {
@@ -872,39 +981,45 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 </div>
               </div>
 
-              <div className="relative aspect-[4/3] sm:aspect-video w-full overflow-hidden bg-ink">
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={currentScene.number}
-                    src={`${baseUrl}${currentScene.imageJpg}`}
-                    alt={currentScene.imageAlt}
-                    style={{ objectPosition: currentScene.objectPosition }}
-                    initial={{ opacity: 0.25 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0.25 }}
-                    transition={{ duration: 0.65 }}
-                    className={`w-full h-full object-cover ${
-                      docPlaying ? 'ken-burns-active' : ''
-                    }`}
-                  />
-                </AnimatePresence>
+              <div className="relative">
+                <div className="relative aspect-[4/3] sm:aspect-video w-full overflow-hidden bg-ink">
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={currentScene.number}
+                      src={`${baseUrl}${currentScene.imageJpg}`}
+                      alt={currentScene.imageAlt}
+                      style={{ objectPosition: currentScene.objectPosition }}
+                      initial={{ opacity: 0.25 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0.25 }}
+                      transition={{ duration: 0.65 }}
+                      className={`w-full h-full object-cover ${
+                        docPlaying ? 'ken-burns-active' : ''
+                      }`}
+                    />
+                  </AnimatePresence>
+                </div>
 
-                <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-ink/95 via-ink/65 to-transparent px-5 pb-5 pt-20 sm:px-10 sm:pb-8">
+                {/* En móvil se apila bajo la foto 4:3 para no tapar rostros ni chocar con la barra superior; en sm+ es lower-third cinematográfico */}
+                <div className="relative border-t border-cream/10 bg-ink px-5 py-4 sm:border-t-0 sm:bg-transparent sm:absolute sm:inset-x-0 sm:bottom-0 sm:z-20 sm:bg-gradient-to-t sm:from-ink/95 sm:via-ink/65 sm:to-transparent sm:px-10 sm:pb-8 sm:pt-20">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={currentScene.number}
-                      initial={{ opacity: 0, y: 14 }}
+                      initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.35 }}
-                      className="max-w-3xl space-y-2"
+                      className="max-w-3xl space-y-1.5 sm:space-y-2"
                     >
                       <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-peach">
                         {getPhaseLabel(currentScene.phase)}
                       </p>
-                      <h2 className="font-serif text-xl sm:text-3xl font-medium text-cream leading-snug">
+                      <h2 className="font-serif text-lg sm:text-3xl font-medium text-cream leading-snug">
                         {currentScene.title}
                       </h2>
+                      <p className="text-xs sm:text-base text-cream/85 leading-relaxed max-w-2xl">
+                        {currentScene.whatLines[0]} {currentScene.whatLines[1]}
+                      </p>
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -959,46 +1074,70 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             className="space-y-6"
           >
             <div
-              className="overflow-hidden rounded-[28px] border border-earth/25 bg-cream-soft shadow-[0_20px_50px_rgba(70,45,25,0.1)]"
+              className="overflow-hidden rounded-card border border-earth/25 bg-cream-soft shadow-[0_20px_50px_rgba(70,45,25,0.1)]"
               ref={emblaRef}
             >
               <div className="flex touch-pan-y">
-                {STORYBOARD_SCENES.map((scene) => (
-                  <div key={scene.number} className="flex-[0_0_100%] min-w-0 relative select-none">
-                    <button
-                      type="button"
-                      onClick={(event) => openScenePhoto(scene, false, event.currentTarget)}
-                      aria-label={`Ampliar fotografía de la tarjeta ${scene.numeral}: ${scene.imageAlt}`}
-                      className="relative block w-full cursor-zoom-in overflow-hidden bg-cream-deep p-0 text-left aspect-[4/3] sm:aspect-video focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-cream"
-                    >
-                      <picture>
-                        <source srcSet={`${baseUrl}${scene.imageWebp}`} type="image/webp" />
-                        <img
-                          src={`${baseUrl}${scene.imageJpg}`}
-                          alt={scene.imageAlt}
-                          style={{ objectPosition: scene.objectPosition }}
-                          className="w-full h-full object-cover"
-                        />
-                      </picture>
-                      <div className="absolute top-4 left-4 rounded-full bg-cream-soft/92 backdrop-blur-md border border-earth/20 px-3.5 py-1">
-                        <span className="font-mono text-xs font-semibold text-forest">
-                          {scene.locationTag}
+                {STORYBOARD_SCENES.map((scene) => {
+                  const showSecondarySlide = Boolean(
+                    secondaryActiveMap[scene.number] && scene.secondaryPhoto
+                  );
+                  const slideWebp =
+                    showSecondarySlide && scene.secondaryPhoto
+                      ? scene.secondaryPhoto.webp
+                      : scene.imageWebp;
+                  const slideJpg =
+                    showSecondarySlide && scene.secondaryPhoto
+                      ? scene.secondaryPhoto.jpg
+                      : scene.imageJpg;
+                  const slideAlt =
+                    showSecondarySlide && scene.secondaryPhoto
+                      ? scene.secondaryPhoto.alt
+                      : scene.imageAlt;
+                  const slidePos =
+                    showSecondarySlide && scene.secondaryPhoto
+                      ? scene.secondaryPhoto.objectPosition
+                      : scene.objectPosition;
+
+                  return (
+                    <div key={scene.number} className="flex-[0_0_100%] min-w-0 relative select-none">
+                      <button
+                        type="button"
+                        onClick={(event) =>
+                          openScenePhoto(scene, showSecondarySlide, event.currentTarget)
+                        }
+                        aria-label={`Ampliar fotografía de la tarjeta ${scene.numeral}: ${slideAlt}`}
+                        className="relative block w-full cursor-zoom-in overflow-hidden bg-cream-deep p-0 text-left aspect-[4/3] sm:aspect-video focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-cream"
+                      >
+                        <picture>
+                          <source srcSet={`${baseUrl}${slideWebp}`} type="image/webp" />
+                          <img
+                            src={`${baseUrl}${slideJpg}`}
+                            alt={slideAlt}
+                            style={{ objectPosition: slidePos }}
+                            className="w-full h-full object-cover"
+                          />
+                        </picture>
+                        <div className="absolute top-4 left-4 rounded-full bg-cream-soft/92 backdrop-blur-md border border-earth/20 px-3.5 py-1">
+                          <span className="font-mono text-xs font-semibold text-forest">
+                            {scene.locationTag}
+                          </span>
+                        </div>
+                        <span className="absolute top-4 right-4 rounded-full bg-ink/55 px-2.5 py-1 font-mono text-[10px] tracking-wide text-cream/80 backdrop-blur-sm">
+                          <span aria-hidden="true">
+                            {scene.numeral}/{String(STORYBOARD_SCENES.length).padStart(2, '0')}
+                          </span>
+                          <span className="sr-only">
+                            Tarjeta {scene.numeral} de {STORYBOARD_SCENES.length}
+                          </span>
                         </span>
-                      </div>
-                      <span className="absolute top-4 right-4 rounded-full bg-ink/55 px-2.5 py-1 font-mono text-[10px] tracking-wide text-cream/80 backdrop-blur-sm">
-                        <span aria-hidden="true">
-                          {scene.numeral}/{String(STORYBOARD_SCENES.length).padStart(2, '0')}
-                        </span>
-                        <span className="sr-only">
-                          Tarjeta {scene.numeral} de {STORYBOARD_SCENES.length}
-                        </span>
-                      </span>
-                      <div className="absolute bottom-3 right-4 rounded-full bg-ink/75 backdrop-blur-xs px-3 py-1 text-[11px] font-medium text-cream">
-                        Toca para ver foto completa
-                      </div>
-                    </button>
-                  </div>
-                ))}
+                        <div className="absolute bottom-3 right-4 rounded-full bg-ink/75 backdrop-blur-xs px-3 py-1 text-[11px] font-medium text-cream">
+                          Toca para ver foto completa
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -1033,7 +1172,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.32, ease: 'easeOut' }}
-                className="rounded-[26px] bg-cream-soft border border-earth/20 p-6 sm:p-8 shadow-sm space-y-5"
+                className="rounded-card bg-cream-soft border border-earth/20 p-6 sm:p-8 shadow-sm space-y-5"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="space-y-1">
@@ -1061,6 +1200,52 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                   </button>
                 </div>
 
+                <p className="text-sm sm:text-base text-ink-soft leading-relaxed">
+                  {currentScene.howDescription}
+                </p>
+
+                {currentScene.secondaryPhoto && (
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="font-mono text-[11px] text-ink-muted">Evidencias:</span>
+                    <div className="inline-flex flex-wrap rounded-full bg-cream-deep/75 p-0.5 border border-earth/15">
+                      <button
+                        type="button"
+                        aria-pressed={!secondaryActiveMap[currentScene.number]}
+                        onClick={() =>
+                          setSecondaryActiveMap((m) => ({ ...m, [currentScene.number]: false }))
+                        }
+                        className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
+                          !secondaryActiveMap[currentScene.number]
+                            ? 'bg-forest text-cream'
+                            : 'text-ink-soft hover:text-ink'
+                        }`}
+                      >
+                        {currentScene.secondaryPhoto.primaryLabel}
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={Boolean(secondaryActiveMap[currentScene.number])}
+                        onClick={() =>
+                          setSecondaryActiveMap((m) => ({ ...m, [currentScene.number]: true }))
+                        }
+                        className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
+                          secondaryActiveMap[currentScene.number]
+                            ? 'bg-forest text-cream'
+                            : 'text-ink-soft hover:text-ink'
+                        }`}
+                      >
+                        {currentScene.secondaryPhoto.label}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <p className="pt-3 border-t border-earth/15 text-xs sm:text-sm text-ink-muted">
+                  <strong className="font-mono text-[10px] uppercase tracking-[0.14em] text-earth mr-2">
+                    Siguiente paso:
+                  </strong>
+                  {currentScene.transitionNote}
+                </p>
               </motion.div>
             </AnimatePresence>
           </motion.div>
@@ -1148,7 +1333,8 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
               }
             >
               {STORYBOARD_SCENES.map((scene, index) => {
-                const isReversed = index % 2 === 1 && viewMode === 'editorial';
+                const isEditorial = viewMode === 'editorial';
+                const isReversed = index % 2 === 1 && viewMode === 'technical';
                 const isTechExpanded = viewMode === 'technical';
                 const showSecondary = Boolean(secondaryActiveMap[scene.number] && scene.secondaryPhoto);
                 const activeWebp =
@@ -1179,24 +1365,35 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                       initial={{ opacity: 0, y: 34 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: '-75px' }}
-                      transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
-                      className="scroll-mt-6 sm:scroll-mt-36 rounded-[24px] sm:rounded-[30px] bg-cream-soft/95 backdrop-blur-xs border border-earth/20 shadow-[0_16px_45px_rgba(70,45,25,0.07)] overflow-hidden p-4 sm:p-6 lg:p-8"
+                      transition={{ duration: 0.72, ease: EASE_OUT_EXPO }}
+                      className={`group/card scroll-mt-6 sm:scroll-mt-36 rounded-inner sm:rounded-card bg-cream-soft/95 backdrop-blur-xs border border-earth/20 shadow-card transition-[box-shadow,border-color] duration-500 ease-out-expo hover:shadow-card-hover hover:border-earth/30 overflow-hidden ${
+                        isEditorial ? 'p-4 sm:p-5 lg:p-6' : 'p-4 sm:p-6 lg:p-8'
+                      }`}
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+                      <div
+                        className={
+                          isEditorial
+                            ? 'grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-7 items-center'
+                            : 'grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center'
+                        }
+                      >
                         {/* Columna de fotografía real en campo */}
                         <div
-                          className={`lg:col-span-6 space-y-3 ${
-                            isReversed ? 'lg:order-2' : 'lg:order-1'
+                          className={`space-y-2.5 ${
+                            isEditorial
+                              ? 'md:col-span-6'
+                              : `lg:col-span-6 ${isReversed ? 'lg:order-2' : 'lg:order-1'}`
                           }`}
                         >
                           <TiltPlate
                             maxTilt={3.8}
                             onClick={(trigger) => openScenePhoto(scene, showSecondary, trigger)}
                             ariaLabel={`Ampliar fotografía real de la tarjeta ${scene.number}: ${scene.title}`}
-                            className="group overflow-hidden rounded-[22px] border border-earth/20 bg-cream-deep cursor-zoom-in"
+                            className="group overflow-hidden rounded-inner border border-earth/20 bg-cream-deep cursor-zoom-in"
                           >
                             <div className="overflow-hidden aspect-[4/3]">
-                              <picture>
+                              {/* Zoom suave al pasar el cursor (independiente del parallax GSAP del <img>) */}
+                              <picture className="block h-full w-full transition-transform duration-700 ease-out-expo group-hover:scale-[1.04]">
                                 <source srcSet={`${baseUrl}${activeWebp}`} type="image/webp" />
                                 <img
                                   src={`${baseUrl}${activeJpg}`}
@@ -1224,7 +1421,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                             </span>
 
                             <div className="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-4 no-print">
-                              <span className="rounded-full bg-cream-soft/95 px-3.5 py-1 text-xs font-semibold text-ink shadow-sm">
+                              <span className="translate-y-2 rounded-full bg-cream-soft/95 px-3.5 py-1 text-xs font-semibold text-ink shadow-sm transition-transform duration-500 ease-out-expo group-hover:translate-y-0">
                                 Ver foto completa con zoom
                               </span>
                             </div>
@@ -1232,13 +1429,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
 
                           {/* Selector de segunda fotografía real cuando la tarjeta tiene dos evidencias */}
                           {scene.secondaryPhoto && (
-                            <div className="flex items-center justify-between gap-2 px-1 no-print">
-                              <span className="font-mono text-[11px] text-ink-muted">
-                                2 fotografías de esta tarjeta:
-                              </span>
-                              <div className="inline-flex rounded-full bg-cream-deep/75 p-0.5 border border-earth/15">
+                            <div className="flex items-center gap-2 px-1 no-print">
+                              <div className="inline-flex flex-wrap rounded-full bg-cream-deep/75 p-0.5 border border-earth/15">
                                 <button
                                   type="button"
+                                  aria-pressed={!showSecondary}
                                   onClick={() =>
                                     setSecondaryActiveMap((m) => ({ ...m, [scene.number]: false }))
                                   }
@@ -1248,10 +1443,11 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                                       : 'text-ink-soft hover:text-ink'
                                   }`}
                                 >
-                                  Foto 01 de 02
+                                  {scene.secondaryPhoto.primaryLabel}
                                 </button>
                                 <button
                                   type="button"
+                                  aria-pressed={showSecondary}
                                   onClick={() =>
                                     setSecondaryActiveMap((m) => ({ ...m, [scene.number]: true }))
                                   }
@@ -1261,21 +1457,26 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                                       : 'text-ink-soft hover:text-ink'
                                   }`}
                                 >
-                                  Foto 02 de 02 · {scene.secondaryPhoto.label}
+                                  {scene.secondaryPhoto.label}
                                 </button>
                               </div>
                             </div>
                           )}
                         </div>
 
-                        {/* Columna explicativa clara: ¿Qué se hace? y ¿Cómo se hace? */}
+                        {/* Columna explicativa clara: relato humano + contexto fotográfico */}
                         <div
-                          className={`lg:col-span-6 space-y-4 ${
-                            isReversed ? 'lg:order-1' : 'lg:order-2'
+                          className={`space-y-3.5 ${
+                            isEditorial
+                              ? 'md:col-span-6'
+                              : `lg:col-span-6 ${isReversed ? 'lg:order-1' : 'lg:order-2'}`
                           } gsap-story-copy`}
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className="font-mono text-xs font-semibold text-terracotta">
+                                {scene.numeral}
+                              </span>
                               <span
                                 className={`inline-block rounded-full border px-3 py-0.5 text-xs font-semibold ${accent.pill}`}
                               >
@@ -1297,44 +1498,56 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
                             </button>
                           </div>
 
-                          <h2 className="font-serif text-2xl sm:text-[1.72rem] font-semibold leading-tight text-ink">
+                          <h3
+                            className={`font-serif font-semibold leading-tight text-ink [text-wrap:balance] ${
+                              isEditorial ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-[1.72rem]'
+                            }`}
+                          >
                             {scene.title}
-                          </h2>
+                          </h3>
 
+                          <p className="text-sm sm:text-[15px] text-ink-soft leading-relaxed">
+                            {scene.howDescription}
+                          </p>
+
+                          {/* Ficha: ahora vive junto al título y equilibra la columna (antes quedaba vacía) */}
+                          <AnimatePresence initial={false}>
+                            {isTechExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
+                                className="overflow-hidden"
+                              >
+                                <div className="pt-4 mt-1 border-t border-earth/15 space-y-4 text-sm">
+                                  <div className="rounded-inner bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5 transition-colors duration-500 group-hover/card:bg-cream">
+                                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest font-medium">
+                                      Contexto de la imagen
+                                    </p>
+                                    <p className="text-ink-soft leading-relaxed">
+                                      {scene.visualDescription}
+                                    </p>
+                                  </div>
+
+                                  <div className="relative pl-5 space-y-1">
+                                    <span
+                                      aria-hidden="true"
+                                      className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-gradient-to-b from-terracotta/70 to-peach/40"
+                                    />
+                                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth font-medium">
+                                      Continuidad del proceso
+                                    </p>
+                                    <p className="text-ink-soft leading-relaxed">
+                                      {scene.transitionNote}
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
-
-                      <AnimatePresence initial={false}>
-                        {isTechExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                            className="overflow-hidden"
-                          >
-                            <div className="mt-6 pt-6 border-t border-earth/15 grid grid-cols-1 md:grid-cols-12 gap-5 text-sm">
-                              <div className="md:col-span-8 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
-                                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-forest font-medium">
-                                  Contexto de la imagen
-                                </p>
-                                <p className="text-ink-soft leading-relaxed">
-                                  {scene.visualDescription}
-                                </p>
-                              </div>
-
-                              <div className="md:col-span-4 rounded-2xl bg-cream/80 border border-earth/15 p-4 sm:p-5 space-y-1.5">
-                                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-earth font-medium">
-                                  Continuidad del proceso
-                                </p>
-                                <p className="text-ink-soft leading-relaxed">
-                                  {scene.transitionNote}
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </motion.article>
                   </div>
                 );
@@ -1367,7 +1580,7 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.18 } }}
             transition={{ duration: 0.24 }}
             onClick={() => setLightboxMedia(null)}
             className="fixed inset-0 z-50 bg-ink/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 no-print"
@@ -1379,11 +1592,16 @@ export default function StoryboardExperience({ baseUrl }: StoryboardExperiencePr
             <motion.div
               initial={{ scale: 0.94, opacity: 0, y: 14 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.96, opacity: 0, y: 10 }}
+              exit={{
+                scale: 0.96,
+                opacity: 0,
+                y: 10,
+                transition: { duration: 0.18, ease: EASE_OUT_EXPO },
+              }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
               onClick={(e) => e.stopPropagation()}
               ref={lightboxDialogRef}
-              className="max-w-5xl w-full rounded-[28px] bg-cream-soft border border-earth/30 overflow-hidden shadow-2xl"
+              className="max-w-5xl w-full rounded-card bg-cream-soft border border-earth/30 overflow-hidden shadow-2xl"
             >
               <TransformWrapper
                 initialScale={1}

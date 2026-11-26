@@ -13,6 +13,7 @@ export interface StoryboardScene {
     webp: string;
     jpg: string;
     alt: string;
+    primaryLabel: string;
     label: string;
     objectPosition: string;
   };
@@ -110,6 +111,7 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
       webp: 'assets/foto-09.webp',
       jpg: 'assets/foto-09.jpg',
       alt: 'Brigadistas caminando por brechas de tierra bordeadas de órganos cactáceos y mezquites en San José Buenavista.',
+      primaryLabel: 'Encuestas',
       label: 'Recorrido en brechas',
       objectPosition: '50% 55%',
     },
@@ -186,7 +188,8 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
       webp: 'assets/foto-10.webp',
       jpg: 'assets/foto-10.jpg',
       alt: 'Asesor y estudiantes de la brigada UIEP durante la jornada comunitaria bajo la sombra de un árbol en San José Buenavista.',
-      label: 'Jornada en campo',
+      primaryLabel: 'Propuestas técnicas',
+      label: 'Jornada comunitaria',
       objectPosition: '50% 38%',
     },
     whatLines: [

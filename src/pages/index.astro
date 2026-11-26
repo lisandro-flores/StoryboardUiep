@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SmoothScroll from '../components/SmoothScroll';
 import AmbientBackdrop from '../components/AmbientBackdrop';
+import { ScrollProgress } from '../components/ui/scroll-progress';
 import HeroSection from '../components/HeroSection';
 import StoryboardExperience from '../components/StoryboardExperience';
 import TerritoryMapExplorer from '../components/TerritoryMapExplorer';
@@ -14,11 +15,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
 
 <BaseLayout>
   <SmoothScroll client:load />
+  <ScrollProgress className="h-[3px] z-[70] no-print" client:load />
   <AmbientBackdrop client:idle />
   <HeroSection baseUrl={baseUrl} client:load />
   <main>
     <StoryboardExperience baseUrl={baseUrl} client:load />
     <TerritoryMapExplorer baseUrl={baseUrl} client:visible />
-    <CommunityClosing client:visible />
+    <CommunityClosing baseUrl={baseUrl} client:visible />
   </main>
 </BaseLayout>

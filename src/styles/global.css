@@ -21,6 +21,28 @@
   --color-ink: #1B1714;
   --color-ink-soft: #4A4037;
   --color-ink-muted: #76685A;
+
+  /* Alias semánticos que esperan los componentes shadcn / Magic UI */
+  --color-background: #FFFBF4;
+  --color-border: rgba(142, 101, 69, 0.2);
+
+  /* Sistema de radios unificado: tarjeta exterior + bloque interior */
+  --radius-card: 1.75rem;
+  --radius-inner: 1.125rem;
+
+  /* Sombras cálidas en dos niveles (reposo / elevación al pasar el cursor) */
+  --shadow-card: 0 16px 45px rgba(70, 45, 25, 0.07);
+  --shadow-card-hover: 0 24px 60px rgba(70, 45, 25, 0.13);
+
+  /* Curva de movimiento editorial compartida por CSS y Motion */
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-scroll-cue: scrollCue 1.8s var(--ease-out-expo) infinite;
+
+  @keyframes scrollCue {
+    0%, 100% { transform: translateY(0); opacity: 0.85; }
+    50% { transform: translateY(5px); opacity: 1; }
+  }
 }
 
 @layer base {
@@ -76,23 +98,6 @@
   will-change: transform;
 }
 
-@keyframes blurFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-    filter: blur(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-.blur-fade-in {
-  animation: blurFadeIn 400ms ease-out both;
-}
-
 .scroll-zoom-hero {
   min-height: 170svh;
 }
@@ -103,6 +108,7 @@
 }
 
 .field-scroll-sticky {
+  --field-card-w: min(86vw, 24rem);
   position: sticky;
   top: 0;
   display: flex;
@@ -114,12 +120,18 @@
     var(--color-cream);
 }
 
+@media (min-width: 768px) {
+  .field-scroll-sticky {
+    --field-card-w: min(86vw, 52rem);
+  }
+}
+
 .field-scroll-heading {
   display: flex;
   align-items: end;
   justify-content: space-between;
   gap: 1.5rem;
-  padding: clamp(6rem, 11svh, 8rem) max(1.25rem, calc((100% - min(82vw, 36rem)) / 2)) 1rem;
+  padding: clamp(3.75rem, 6.5svh, 4.75rem) max(1.25rem, calc((100% - var(--field-card-w)) / 2)) 0.5rem;
 }
 
 .field-scroll-viewport {
@@ -134,14 +146,14 @@
 .field-scroll-track {
   display: flex;
   width: max-content;
-  align-items: stretch;
+  align-items: center;
   gap: clamp(1rem, 2vw, 1.5rem);
-  padding-inline: max(0px, calc((100% - min(82vw, 36rem)) / 2));
+  padding-inline: max(0px, calc((100% - var(--field-card-w)) / 2));
   will-change: transform;
 }
 
 .field-scroll-item {
-  flex: 0 0 min(82vw, 36rem);
+  flex: 0 0 var(--field-card-w);
   scroll-snap-align: center;
 }
 
@@ -149,7 +161,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 max(1.25rem, calc((100% - min(82vw, 36rem)) / 2)) 1.5rem;
+  padding: 0 max(1.25rem, calc((100% - var(--field-card-w)) / 2)) 1rem;
 }
 
 .field-scroll-swipe-hint {
@@ -158,7 +170,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ken-burns-active,
-  .blur-fade-in {
+  .animate-scroll-cue {
     animation: none;
     will-change: auto;
   }
@@ -179,6 +191,10 @@
     filter: none !important;
     will-change: auto;
   }
+
+  .scroll-zoom-curtain {
+    opacity: 0 !important;
+  }
 }
 
 @media (max-height: 620px) and (prefers-reduced-motion: no-preference) {
@@ -191,7 +207,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce), (max-height: 620px) {
+@media (prefers-reduced-motion: reduce), (max-height: 640px), (max-width: 767px) {
   .field-scroll-container {
     height: auto !important;
     min-height: 0;

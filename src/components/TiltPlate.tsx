@@ -2,6 +2,7 @@ import { useRef, type ReactNode } from 'react';
 import {
   motion,
   useMotionValue,
+  useReducedMotion,
   useSpring,
   useTransform,
   useMotionTemplate,
@@ -26,6 +27,7 @@ export default function TiltPlate({
   ariaLabel,
 }: TiltPlateProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
@@ -38,10 +40,10 @@ export default function TiltPlate({
 
   const glareX = useTransform(smoothX, [0, 1], [0, 100]);
   const glareY = useTransform(smoothY, [0, 1], [0, 100]);
-  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255, 251, 244, 0.32) 0%, transparent 62%)`;
+  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255, 251, 244, 0.34) 0%, transparent 62%)`;
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === 'touch' || !ref.current) return;
+    if (shouldReduceMotion || e.pointerType === 'touch' || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width;
     const py = (e.clientY - rect.top) / rect.height;
@@ -62,7 +64,11 @@ export default function TiltPlate({
     <div className="perspective-stage">
       <motion.div
         ref={ref}
-        style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+        style={
+          shouldReduceMotion
+            ? undefined
+            : { rotateX, rotateY, transformStyle: 'preserve-3d' }
+        }
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         onClick={onClick ? handleClick : undefined}
@@ -79,14 +85,16 @@ export default function TiltPlate({
         role={onClick ? 'button' : undefined}
         tabIndex={onClick ? 0 : undefined}
         aria-label={ariaLabel}
-        className={`relative will-change-transform ${className}`}
+        className={`group/tilt relative will-change-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest ${className}`}
       >
         {children}
-        <motion.div
-          style={{ background: glareBackground }}
-          className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 hover:opacity-100 transition-opacity duration-300"
-          aria-hidden="true"
-        />
+        {!shouldReduceMotion && (
+          <motion.div
+            style={{ background: glareBackground }}
+            className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover/tilt:opacity-100"
+            aria-hidden="true"
+          />
+        )}
       </motion.div>
     </div>
   );
