@@ -8,7 +8,7 @@ interface Props {
 
 const {
   title = 'Diagnóstico Comunitario Participativo — San José Buenavista | UIEP',
-  description = 'Relato visual interactivo sobre el Diagnóstico Comunitario Participativo en San José Buenavista, Puebla, realizado en conjunto con la brigada de Ingeniería Civil Sustentable de la UIEP.',
+  description = 'Memoria documental del Diagnóstico Comunitario Participativo en San José Buenavista, Puebla, realizado junto con la brigada de Ingeniería Civil Sustentable de la UIEP.',
 } = Astro.props;
 
 const baseUrl = import.meta.env.BASE_URL.endsWith('/')
@@ -32,15 +32,15 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     <meta property="og:description" content={description} />
     <meta property="og:image" content={`${baseUrl}assets/foto-01.jpg`} />
 
-    <!-- Tipografías editoriales modernas: Fraunces + Plus Jakarta Sans + JetBrains Mono -->
+    <!-- Tipografía editorial humana y documental: Alegreya (Huerta Tipográfica) + Source Sans 3 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,SOFT,wght@0,9..144,50,500..700;1,9..144,50,500..600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500..700;1,400..600&family=Source+Sans+3:ital,wght@0,400..700;1,400&display=swap"
       rel="stylesheet"
     />
   </head>
-  <body class="bg-cream text-ink selection:bg-peach/50">
+  <body class="bg-cream text-ink selection:bg-peach/45">
     <div class="paper-grain" aria-hidden="true"></div>
     <slot />
   </body>

@@ -3,7 +3,6 @@ import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { TERRITORY_NODES, type TerritoryNode } from '../data/storyboard';
 import { soundscape } from '../utils/soundscape';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { MagicCard } from '@/components/ui/magic-card';
 import { EASE_OUT_EXPO, SPRING_PILL, STAGGER } from '@/lib/motion';
 
 interface TerritoryMapExplorerProps {
@@ -44,32 +43,33 @@ export default function TerritoryMapExplorer({ baseUrl }: TerritoryMapExplorerPr
 
   return (
     <MotionConfig reducedMotion="user">
-      <section id="mapa-territorial" className="pb-20 scroll-mt-28 no-print">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <section id="mapa-territorial" className="pb-20 pt-6 scroll-mt-28 no-print">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-7 border-t border-earth/25 pt-12 sm:pt-16">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="max-w-2xl space-y-2">
+            <div className="max-w-2xl space-y-1.5">
               <BlurFade inView delay={0}>
-                <p className="font-mono text-xs uppercase tracking-[0.16em] text-earth font-medium">
-                  Cinco puntos del diagnóstico
+                <p className="text-sm font-semibold text-terracotta">
+                  Puntos revisados en la localidad
                 </p>
               </BlurFade>
               <BlurFade inView delay={STAGGER}>
-                <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-ink leading-tight [text-wrap:balance]">
+                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-ink leading-tight [text-wrap:balance]">
                   Frentes de atención en San José Buenavista
                 </h2>
               </BlurFade>
             </div>
             <BlurFade inView delay={STAGGER * 2}>
-              <p className="text-xs sm:text-sm text-ink-muted max-w-xs">
-                Selecciona un punto para consultar el hallazgo y la propuesta correspondiente.
+              <p className="text-sm text-ink-muted max-w-xs leading-relaxed">
+                Elige uno de los cinco lugares para consultar qué se observó y qué mejora se propone.
               </p>
             </BlurFade>
           </div>
 
+          {/* Pestañas sobrias estilo índice de plano (sin píldoras flotantes) */}
           <div
             role="tablist"
             aria-label="Puntos territoriales del diagnóstico"
-            className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1"
+            className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar border-b border-earth/25"
           >
             {TERRITORY_NODES.map((node, idx) => {
               const isSelected = idx === selectedIndex;
@@ -80,41 +80,40 @@ export default function TerritoryMapExplorer({ baseUrl }: TerritoryMapExplorerPr
                   role="tab"
                   aria-selected={isSelected}
                   onClick={() => handleSelect(idx)}
-                  className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`relative shrink-0 px-3.5 py-2.5 text-sm transition-colors cursor-pointer ${
                     isSelected
-                      ? 'text-cream'
-                      : 'text-ink-soft bg-cream-soft border border-earth/20 hover:text-ink hover:border-earth/35'
+                      ? 'font-semibold text-forest'
+                      : 'font-medium text-ink-muted hover:text-ink'
                   }`}
                 >
+                  <span className="tabular-nums text-terracotta/85 mr-1.5 font-semibold">
+                    0{idx + 1}.
+                  </span>
+                  <span>{node.zone}</span>
                   {isSelected && (
                     <motion.span
-                      layoutId="activeTerritoryPill"
+                      layoutId="activeTerritoryUnderline"
                       transition={SPRING_PILL}
-                      className="absolute inset-0 rounded-full bg-forest shadow-xs"
+                      className="absolute inset-x-0 -bottom-px h-[2.5px] bg-forest"
                     />
                   )}
-                  <span className="relative z-10 font-mono mr-1.5 text-[11px] opacity-80">
-                    0{idx + 1}
-                  </span>
-                  <span className="relative z-10">{node.zone}</span>
                 </button>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            {/* Mapa real con cabecera propia (sin superponerse a los controles nativos de Google Maps) */}
-            <div className="lg:col-span-6 flex flex-col overflow-hidden rounded-card border border-earth/25 bg-cream-soft shadow-card min-h-[380px] sm:min-h-[460px]">
-              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-earth/15 bg-cream-soft/95">
-                <span className="inline-flex items-center gap-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-soft">
-                  <span className="h-2 w-2 rounded-full bg-forest" aria-hidden="true" />
-                  San José Buenavista · CP 75685
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+            {/* Mapa de ubicación con cabecera limpia */}
+            <div className="lg:col-span-6 flex flex-col overflow-hidden rounded-card border border-earth/25 bg-cream-soft shadow-card min-h-[360px] sm:min-h-[440px]">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b border-earth/20 bg-cream-soft">
+                <span className="text-xs sm:text-sm font-semibold text-ink-soft">
+                  San José Buenavista · CP 75685, Puebla
                 </span>
                 <a
                   href={MAP_PAGE_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-earth/20 bg-cream px-3 py-1 text-xs font-semibold text-forest transition-colors hover:bg-peach-pale/60"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-forest underline underline-offset-4 hover:text-forest-dark"
                 >
                   <span>Abrir en Google Maps</span>
                   <span aria-hidden="true">↗</span>
@@ -132,87 +131,90 @@ export default function TerritoryMapExplorer({ baseUrl }: TerritoryMapExplorerPr
               </div>
             </div>
 
-            {/* Ficha interactiva con luz cálida MagicCard + foto ampliable + diagnóstico + propuesta */}
+            {/* Cédula del punto seleccionado: papel limpio y filetes divisorios, sin cajas pastel */}
             <div className="lg:col-span-6 flex">
-              <MagicCard className="w-full shadow-card transition-shadow duration-500 hover:shadow-card-hover">
+              <div className="w-full rounded-card border border-earth/25 bg-cream-soft shadow-card">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeNode.id}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.3, ease: EASE_OUT_EXPO }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.26, ease: EASE_OUT_EXPO }}
                     className="h-full p-5 sm:p-7 flex flex-col justify-between gap-5"
                   >
                     <div className="space-y-4">
-                      <button
-                        type="button"
-                        onClick={() => openNodePhoto(activeNode)}
-                        aria-label={`Ampliar fotografía de ${activeNode.zone}`}
-                        className="group relative block w-full overflow-hidden rounded-inner border border-earth/15 aspect-[16/9] bg-cream-deep cursor-zoom-in text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
-                      >
-                        <picture className="block h-full w-full transition-transform duration-700 ease-out-expo group-hover:scale-[1.04]">
-                          <source srcSet={`${baseUrl}${activeNode.photoWebp}`} type="image/webp" />
-                          <img
-                            src={`${baseUrl}${activeNode.photoJpg}`}
-                            alt={activeNode.zone}
-                            style={{ objectPosition: activeNode.photoPosition }}
-                            className="w-full h-full object-cover"
-                          />
-                        </picture>
-                        <span className="absolute bottom-3 right-3 rounded-full bg-cream-soft/92 backdrop-blur-md px-3 py-1 text-[11px] font-semibold text-ink shadow-xs opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-                          Ampliar foto
-                        </span>
-                      </button>
+                      <figure className="space-y-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openNodePhoto(activeNode)}
+                          aria-label={`Ampliar fotografía de ${activeNode.zone}`}
+                          className="group relative block w-full overflow-hidden rounded-inner border border-earth/20 aspect-[16/9] bg-cream-deep cursor-zoom-in text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                        >
+                          <picture className="block h-full w-full transition-transform duration-500 ease-out-expo group-hover:scale-[1.025]">
+                            <source srcSet={`${baseUrl}${activeNode.photoWebp}`} type="image/webp" />
+                            <img
+                              src={`${baseUrl}${activeNode.photoJpg}`}
+                              alt={activeNode.zone}
+                              style={{ objectPosition: activeNode.photoPosition }}
+                              className="w-full h-full object-cover"
+                            />
+                          </picture>
+                        </button>
+                        <figcaption className="flex items-center justify-between text-xs text-ink-muted">
+                          <span>Fotografía en sitio · {activeNode.zone}</span>
+                          <span className="underline underline-offset-2">Clic para ampliar</span>
+                        </figcaption>
+                      </figure>
 
-                      <div className="space-y-1">
-                        <span className="inline-block font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-terracotta">
-                          {activeNode.code}
-                        </span>
-                        <h3 className="font-serif text-xl sm:text-2xl font-semibold text-ink leading-snug">
+                      <div>
+                        <h3 className="font-serif text-2xl sm:text-[1.65rem] font-bold text-ink leading-snug">
+                          <span className="text-terracotta mr-2 tabular-nums">
+                            0{selectedIndex + 1}.
+                          </span>
                           {activeNode.zone}
                         </h3>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="rounded-inner bg-rose-pale/45 border border-rose/60 p-3.5 space-y-1">
-                          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-earth font-semibold">
-                            Qué se detectó
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-3 border-t border-earth/20">
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-bold uppercase tracking-wider text-terracotta">
+                            Qué se observó
                           </p>
-                          <p className="text-xs sm:text-sm text-ink-soft leading-relaxed">
+                          <p className="text-sm sm:text-[15px] text-ink-soft leading-relaxed">
                             {activeNode.diagnosis}
                           </p>
                         </div>
 
-                        <div className="rounded-inner bg-olive-pale/55 border border-olive/35 p-3.5 space-y-1">
-                          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-forest font-semibold">
+                        <div className="space-y-1.5 sm:border-l sm:border-earth/20 sm:pl-5">
+                          <p className="text-xs font-bold uppercase tracking-wider text-forest">
                             Qué se propone
                           </p>
-                          <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
+                          <p className="text-sm sm:text-[15px] text-ink leading-relaxed font-medium">
                             {activeNode.proposal}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-earth/15 flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-xs text-ink-muted font-medium flex-1">
+                    <div className="pt-3.5 border-t border-earth/20 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-xs sm:text-sm text-ink-muted italic flex-1">
                         {activeNode.benefit}
                       </p>
                       <button
                         type="button"
                         onClick={() => jumpToRelatedScene(activeNode.relatedScene)}
-                        className="group inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-xs font-semibold text-cream hover:bg-forest-dark transition-colors cursor-pointer shrink-0"
+                        className="group inline-flex items-center gap-1.5 rounded-md bg-forest px-4 py-2 text-xs sm:text-sm font-semibold text-cream hover:bg-forest-dark transition-colors cursor-pointer shrink-0"
                       >
-                        <span>Ir a la tarjeta 0{activeNode.relatedScene}</span>
-                        <span className="transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden="true">
+                        <span>Ir al paso 0{activeNode.relatedScene}</span>
+                        <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true">
                           →
                         </span>
                       </button>
                     </div>
                   </motion.div>
                 </AnimatePresence>
-              </MagicCard>
+              </div>
             </div>
           </div>
         </div>
